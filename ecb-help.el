@@ -37,23 +37,8 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-layout)
 (require 'ecb-util)
-
-;; XEmacs and Emacs 20.X
-(silentcomp-defvar browse-url-new-window-p)
-(silentcomp-defun browse-url)
-;; Emacs 21
-(silentcomp-defvar browse-url-new-window-flag)
-;; JDE
-(silentcomp-defvar jde-version)
-;; mail and reporter
-(silentcomp-defun mail-subject)
-(silentcomp-defun mail-text)
-(silentcomp-defun reporter-submit-bug-report)
 
 (defconst ecb-help-info-start-file "ecb.info")
 (defconst ecb-help-html-start-file "ecb.html")
@@ -79,23 +64,13 @@ HTML-online-documentation is not included."
                  (const :tag "Html" :value html)))
 
 
-(defcustom ecb-help-info-path (concat
-                               (if ecb-running-xemacs
-                                   (if (file-exists-p
-                                        (concat ecb-ecb-dir
-                                                ecb-help-info-subdir
-                                                ecb-help-info-start-file))
-                                       ecb-help-info-subdir
-                                     "../../info/")
-                                 ecb-help-info-subdir)
-                               ecb-help-info-start-file)
+(defcustom ecb-help-info-path (concat ecb-help-info-subdir
+                                      ecb-help-info-start-file)
   "*Path where the ECB online help in info format resides.
 This must be the location of the file \"ecb.info\" which comes with the ECB
 distribution. If is installed by unpacking the archive available on the ECB
 web-site then this is the subdir `ecb-help-info-subdir' of the installation
-directory of ECB. If it is installed as XEmacs-package \(e.g. via the package
-manager of XEmacs) then this is probably the directory \"../../info/\"
-\(relativ to the Elisp directory of ECB).
+directory of ECB.
 
 The path can either be an absolute path or a path relative to the directory
 where the Elisp files of ECB are.
@@ -105,31 +80,12 @@ Normally there should be no need to change this option!"
   :type 'file)
 
 (defcustom ecb-help-html-path
-  (if (not ecb-running-xemacs)
-      (concat ecb-help-html-subdir ecb-help-html-start-file)
-    (cond ((file-exists-p
-            (concat ecb-ecb-dir
-                    ecb-help-html-subdir
-                    ecb-help-html-start-file))
-           (concat ecb-help-html-subdir ecb-help-html-start-file))
-          ((file-exists-p
-            (concat ecb-ecb-dir
-                    "../../html/"
-                    ecb-help-html-start-file))
-           (concat "../../html/" ecb-help-html-start-file))
-          ((file-exists-p
-            (concat ecb-ecb-dir
-                    "../../html/ecb/index.html"))
-           "../../html/ecb/index.html")
-          (t
-           (concat "../../etc/ecb/html/" ecb-help-html-start-file))))
+  (concat ecb-help-html-subdir ecb-help-html-start-file)
   "*Path where the ECB online help in HTML format resides.
 This must be the location of the file \"index.html\" which comes with the ECB
 distribution. If is installed by unpacking the archive available on the ECB
 web-site then this is the subdir `ecb-help-html-subdir' of the installation
-directory of ECB. If it is installed as XEmacs-package \(e.g. via the package
-manager of XEmacs) then this is probably either the directory \"../../html/\" or
-\"../../etc/ecb/html/\" \(both relative to the Elisp directory of ECB).
+directory of ECB.
 
 The path can either be an absolute path or a path relative to the directory
 where the Elisp files of ECB are.
@@ -303,14 +259,10 @@ a backtrace-buffer and inserts the contents of that."
         (when f
           (insert (format "%s: %s\n"
                           (symbol-name f)
-                          (funcall (if ecb-running-xemacs
-                                       'face-custom-attributes-get
-                                     'custom-face-attributes-get)
-                                   f ecb-frame)))))
+                          (funcall 'custom-face-attributes-get f ecb-frame)))))
       (insert "\n-----------------------------------------------------\n\n"))
     (let* ((messages-buffer 
-	    (get-buffer
-	     (if ecb-running-xemacs " *Message-Log*" "*Messages*")))
+	    (get-buffer "*Messages*"))
 	   (backtrace-buffer (ecb-buffer-obj "*Backtrace*"))
            (tag-dump-buffer (ecb-buffer-obj "*ecb-tag-dump*")))
 
@@ -453,6 +405,6 @@ could be interesting for support."
             ecb-internal-vars ecb-options)))
 
 
-(silentcomp-provide 'ecb-help)
+(provide 'ecb-help)
 
 ;; ecb-help.el ends here

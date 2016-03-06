@@ -61,9 +61,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-util)
 (require 'ecb-cedet-wrapper)
 (ecb-cedet-require 'speedbar)
@@ -73,14 +70,6 @@
 (eval-when-compile
   ;; to avoid compiler grips
   (require 'cl))
-
-
-;; imenu
-(silentcomp-defvar imenu--rescan-item)
-(silentcomp-defvar imenu--index-alist)
-;; XEmacs
-(silentcomp-defun event-button)
-(silentcomp-defvar mouse-motion-handler)
 
 (defgroup ecb-speedbar nil
   "Settings for the speedbar-integration of ECB."
@@ -195,8 +184,8 @@ after clicking onto a filename in the speedbar."
              (equal (selected-frame) ecb-frame)
              (window-live-p (get-buffer-window ecb-speedbar-buffer-name))
              (and item
-                  (ecb-file-exists-p item)
-                  (not (ecb-file-directory-p item))))
+                  (file-exists-p item)
+                  (not (file-directory-p item))))
         (ecb-select-edit-window))))
 
 
@@ -218,25 +207,6 @@ speedbar-window is active, then select the edit-window."
           (ecb-select-edit-window)
         (ecb-speedbar-select-speedbar-window))
     ad-do-it))
-
-;; Klaus Berndl <klaus.berndl@sdm.de>: This implementation is done to make
-;; clear where the bug is fixed...a better impl. can be seen in
-;; tree-buffer-mouse-set-point (does the same but better code - IMHO).
-(defecb-advice dframe-mouse-set-point around ecb-speedbar-adviced-functions
-  "Fixes a bug in the original implementation: if clicked onto an image then
-the point was not set by `mouse-set-point'."
-  (if (and (fboundp 'event-over-glyph-p) (event-over-glyph-p e))
-      ;; We are in XEmacs, and clicked on a picture
-      (let ((ext (event-glyph-extent e)))
-        ;; This position is back inside the extent where the
-        ;; junk we pushed into the property list lives.
-        (if (extent-end-position ext)
-            (progn
-              (mouse-set-point e)
-              (goto-char (1- (extent-end-position ext))))
-          (mouse-set-point e)))
-    ;; We are not in XEmacs, OR we didn't click on a picture.
-    (mouse-set-point e)))
 
 ;; Klaus Berndl <klaus.berndl@sdm.de>: we can not advice
 ;; speedbar-select-attached-frame because this is a defsubst and is therefore
@@ -271,8 +241,7 @@ the point was not set by `mouse-set-point'."
   (ecb-speedbar-activate)
   (set-window-buffer (selected-window)
                      (get-buffer-create ecb-speedbar-buffer-name))
-  (unless ecb-running-xemacs
-    (set (make-local-variable 'auto-hscroll-mode) nil)))
+  (set (make-local-variable 'auto-hscroll-mode) nil))
 
 
 
@@ -309,31 +278,9 @@ future this could break."
       (setq speedbar-buffer (get-buffer-create ecb-speedbar-buffer-name))
       (set-buffer speedbar-buffer)
       (speedbar-mode)
-
-      (if ecb-running-xemacs
-          ;; Hack the XEmacs mouse-motion handler
-          (progn
-            ;; Hack the XEmacs mouse-motion handler
-            (set (make-local-variable 'mouse-motion-handler)
-                 'dframe-track-mouse-xemacs)
-            ;; Hack the double click handler
-            (make-local-variable 'mouse-track-click-hook)
-            (add-hook 'mouse-track-click-hook
-                      (lambda (event count)
-                        (if (/= (event-button event) 1)
-                            nil		; Do normal operations.
-                          (case count
-                            (1 (dframe-quick-mouse event))
-                            ((2 3) (dframe-click event)))
-                          ;; Don't do normal operations.
-                          t))))
-        ;; Enable mouse tracking in emacs
-        (if dframe-track-mouse-function
-            (set (make-local-variable 'track-mouse) t)) ;this could be messy.
-        ;; disable auto-show-mode for Emacs
-        ;; obsolete with beginning of Emacs 21...
-;;         (setq auto-show-mode nil)
-        )))
+      ;; Enable mouse tracking in emacs
+      (if dframe-track-mouse-function
+          (set (make-local-variable 'track-mouse) t)))) ;this could be messy.
 
   ;;Start up the timer
   (speedbar-reconfigure-keymaps)
@@ -558,6 +505,6 @@ Return NODE."
       tag-list)))
 
 
-(silentcomp-provide 'ecb-speedbar)
+(provide 'ecb-speedbar)
 
 ;;; ecb-speedbar.el ends here

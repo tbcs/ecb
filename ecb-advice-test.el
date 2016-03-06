@@ -39,9 +39,6 @@
 ;; 4. If there are differences then send this output to
 ;;    the ecb-mailing-list (see Info-manual)
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-util)
 (require 'ecb-common-browser)
 
@@ -275,7 +272,7 @@
 ;;  I'm the ORIGINAL function ecb-advice-test-defun-4
 ;;  !!! END ecb-test-with-original-advice-set !!!!
 
-(silentcomp-provide 'ecb-advice-test)
+(provide 'ecb-advice-test)
 
 ;;; ecb-advice-test.el ends here
 

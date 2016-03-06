@@ -55,16 +55,8 @@
                                    -1))
 
 (eval-when-compile
-  (require 'silentcomp))
-
-(eval-when-compile
   ;; to avoid compiler grips
   (require 'cl))
-
-;; semantic 1.X does not have this
-(silentcomp-defvar semanticdb-search-system-databases)
-(silentcomp-defvar semantic-format-use-images-flag)
-(silentcomp-defvar ezimage-use-images)
 
 ;; -- getter functions for all variables of semantic currently used by ECB ---
 
@@ -411,6 +403,6 @@ the TAG was found.  Sometimes TABLE can be nil."
       (cons ans anstable))))
 
 
-(silentcomp-provide 'ecb-semantic-wrapper)
+(provide 'ecb-semantic-wrapper)
 
 ;;; ecb-semantic-wrapper.el end here

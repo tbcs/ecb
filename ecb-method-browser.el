@@ -50,21 +50,6 @@
   ;; to avoid compiler grips
   (require 'cl))
 
-(eval-when-compile
-  (require 'silentcomp))
-
-(silentcomp-defun hs-minor-mode)
-(silentcomp-defun hs-show-block)
-(silentcomp-defun hs-hide-block)
-(silentcomp-defvar hs-minor-mode)
-(silentcomp-defvar hs-block-start-regexp)
-(silentcomp-defvar imenu--index-alist)
-
-(silentcomp-defvar semantic-idle-scheduler-mode)
-
-(silentcomp-defun ecb-get-tags-for-non-semantic-files)
-(silentcomp-defun ecb-create-non-semantic-tree)
-
 (defvar ecb-selected-tag nil
   "The currently selected Semantic tag.")
 (make-variable-buffer-local 'ecb-selected-tag)
@@ -332,9 +317,7 @@ cons-cells:
      face is merged with the faces semantic already uses to display a tag,
      i.e. the result is a display where all face-attributes of the ECB-face
      take effect plus all face-attributes of the semantic-faces which are not
-     set in the ECB-face \(with XEmacs this merge doesn't work so here the
-     ECB-face replaces the semantic-faces; this may be fixed in future
-     versions).
+     set in the ECB-face.
 
 The default value is nil means there is no special ECB-displaying of
 type-tags in addition to the displaying and colorizing semantic does. But a
@@ -1337,8 +1320,8 @@ error with ERROR-ARGS."
       (apply 'error error-args))))
 
 ;; encapsulation all semantic-functions ECB uses if they operate with the
-;; semantic-overlays, so we can handle an error if these overlays (extends for
-;; XEmacs) are destroyed and invalid cause of some mysterious circumstances.
+;; semantic-overlays, so we can handle an error if these overlays are destroyed
+;; and invalid cause of some mysterious circumstances.
 
 (defun ecb-semantic-assert-valid-tag (tag &optional no-reparse)
   "Assert that TAG is a valid tag. If not valid then `ecb-enter-debugger'
@@ -3310,12 +3293,7 @@ to be rescanned/reparsed and therefore the Method-buffer will be rebuild too."
                                                 curr-semantic-symbol->name-assoc-list)))
         ;; To ensure cleaning out the methods-display for non-semantic-sources
         ;; when non-semantic-parsing is disabled or such a source is not
-        ;; parsable we set cache to an empty tree. As a side effect this fixes
-        ;; a bug with XEmacs which has the annoying behavior that even
-        ;; semantic-sources are processed twice here when loading such a
-        ;; source whereas the first time semantic is not active; without this
-        ;; dummy-cache we would run in setting the tree-buffer-root to nil
-        ;; which would cause a wrong-argument-type arrayp nil error!
+        ;; parsable we set cache to an empty tree.
         (unless cache
           (setq cache (cons cache-key (tree-node-new-root))))
         (tree-buffer-set-root (cdr cache))
@@ -3491,7 +3469,6 @@ by this command."
 
 ;; TODO: Klaus Berndl <klaus.berndl@sdm.de>: Define this with define-overload
 ;; when the cedet 1.0 is stable - then we can remove the semantic 1.4 support
-;; - but first when cedet 1.0 is also available as XEmacs-package!
 (defun ecb-get-real-curr-tag ()
   "Get the \"real\" current tag. This will be in most cases the tag returned
 by `ecb--semantic-current-tag' but there are exceptions:
@@ -3921,7 +3898,7 @@ This function is fully fitting the needs of the option
         (when (equal 'include (ecb--semantic-tag-class node-tag))
           (with-current-buffer (ecb-path-selected-source 'buffer)
             (let ((file (ecb--semantic-dependency-tag-file node-tag)))
-              (when (and file (ecb-file-exists-p file))
+              (when (and file (file-exists-p file))
                 (setq destination (list (ecb-source-make file)
                                         nil)))))))
 
@@ -4277,11 +4254,7 @@ Returns current point."
   (widen))
 
 
-(if (not ecb-running-xemacs)
-    ;; Klaus Berndl <klaus.berndl@sdm.de>: This is for silencing the
-    ;; byte-compiler. Normally there should be no warning when
-    ;; silentcomp-defun is used for hs-minor-mode but....argghhh.
-    (require 'hideshow))
+(require 'hideshow)
 
 (defun ecb-methods-menu-activate-hs ()
   "Activates `hs-minor-mode' in the buffer of `ecb-path-selected-source'. If
@@ -4737,9 +4710,7 @@ be ensured that the new clone gets its own tags and do not share it with its
 base-buffer. This is achieved by clearing the toplevel cache of semantic.
 
 Returns always the newly created indirect buffer."
-  (when (and (not ecb-running-xemacs) ;; clone not available with XEmacs
-             ;; clone-flag is not nil
-             (ad-get-arg 2))
+  (when (ad-get-arg 2) ;; clone-flag is not nil
     (with-current-buffer ad-return-value
       (message "ECB: semantic cache for indirect buffer %s cleared!" (current-buffer))
       (ecb--semantic-clear-toplevel-cache)))
@@ -4791,7 +4762,7 @@ by semantic and also killed afterwards."
 
 (ecb-disable-advices 'ecb-methods-browser-advices t)
 
-(silentcomp-provide 'ecb-method-browser)
+(provide 'ecb-method-browser)
 
 ;;; ecb-method-browser.el end here
 

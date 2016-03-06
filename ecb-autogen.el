@@ -47,9 +47,6 @@
 
 (require 'ecb-util)
 
-(eval-when-compile
-  (require 'silentcomp))
-
 
 (when (ecb-noninteractive)
   ;; If the user is doing this non-interactively, we need to set up
@@ -123,38 +120,30 @@ Autoloads file name is defined in variable `ecb-autogen-file'. If ECB is
 installed as regular XEmacs-package then this function reports an error and
 does nothing."
   (interactive)
-  (if ecb-regular-xemacs-package-p
-      (ecb-error "Updating autoloads not possible for regular XEmacs-packages!")
-    (if (file-exists-p (expand-file-name ecb-autogen-file))
-        (delete-file (expand-file-name ecb-autogen-file)))
-    (when (not ecb-running-xemacs)
-      ;; generate a new one but do this not for XEmacs because XEmacs must(!)
-      ;; handle this itself
-      (with-temp-file (expand-file-name ecb-autogen-file)
-        (insert "")))
-    (let* ((default-directory (file-name-directory (locate-library "ecb")))
-           (generated-autoload-file (expand-file-name ecb-autogen-file))
-           ;; needed for XEmacs to ensure that always a feature 'ecb-autoloads
-           ;; is provided and not a feature like 'ecb-1.91.2-autoloads (XEmacs
-           ;; uses the installation-directory of ECB as feature prefix if
-           ;; autoload-package-name is not provided.
-           (autoload-package-name "ecb")
-           (subdirs (mapcar 'expand-file-name ecb-autogen-subdirs))
-           (command-line-args-left (cons default-directory subdirs))
-           )
-      (ecb-batch-update-autoloads))
-    ;; XEmacs adds autom. the provide statement but for GNU Emacs we must do
-    ;; this:
-    (when (not ecb-running-xemacs)
-      (with-current-buffer (find-file-noselect (expand-file-name ecb-autogen-file))
-        (goto-char (point-min))
-        (when (not (re-search-forward (format "^(provide '%s)"
-                                              ecb-autoload-feature) nil t))
-          (goto-char (point-max))
-          (insert (format "\n(provide '%s)\n" ecb-autoload-feature))
-          (save-buffer)
-          (kill-buffer (current-buffer)))))))
+  (if (file-exists-p (expand-file-name ecb-autogen-file))
+      (delete-file (expand-file-name ecb-autogen-file)))
+  (with-temp-file (expand-file-name ecb-autogen-file)
+    (insert ""))
+  (let* ((default-directory (file-name-directory (locate-library "ecb")))
+         (generated-autoload-file (expand-file-name ecb-autogen-file))
+         ;; needed for XEmacs to ensure that always a feature 'ecb-autoloads
+         ;; is provided and not a feature like 'ecb-1.91.2-autoloads (XEmacs
+         ;; uses the installation-directory of ECB as feature prefix if
+         ;; autoload-package-name is not provided.
+         (autoload-package-name "ecb")
+         (subdirs (mapcar 'expand-file-name ecb-autogen-subdirs))
+         (command-line-args-left (cons default-directory subdirs))
+         )
+    (ecb-batch-update-autoloads))
+  (with-current-buffer (find-file-noselect (expand-file-name ecb-autogen-file))
+    (goto-char (point-min))
+    (when (not (re-search-forward (format "^(provide '%s)"
+                                          ecb-autoload-feature) nil t))
+      (goto-char (point-max))
+      (insert (format "\n(provide '%s)\n" ecb-autoload-feature))
+      (save-buffer)
+      (kill-buffer (current-buffer)))))
 
-(silentcomp-provide 'ecb-autogen)
+(provide 'ecb-autogen)
 
 ;;; ecb-autogen.el ends here

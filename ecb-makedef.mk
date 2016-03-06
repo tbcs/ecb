@@ -33,7 +33,7 @@ EBATCH=$(EMACS) -batch -no-site-file
 ecb_LISP_EL=tree-buffer.el ecb-util.el ecb-mode-line.el ecb-help.el \
             ecb-layout.el ecb-layout-defs.el ecb-navigate.el ecb.el \
             ecb-eshell.el ecb-cycle.el ecb-face.el ecb-compilation.el \
-            ecb-upgrade.el ecb-create-layout.el silentcomp.el \
+            ecb-upgrade.el ecb-create-layout.el \
             ecb-speedbar.el ecb-examples.el ecb-tod.el ecb-autogen.el \
 	    ecb-jde.el ecb-file-browser.el ecb-method-browser.el \
 	    ecb-winman-support.el ecb-cedet-wrapper.el \

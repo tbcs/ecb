@@ -94,13 +94,8 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-util)
 (require 'ecb-common-browser)
-
-(silentcomp-defvar escreen-current-screen-number)
 
 
 (defgroup ecb-winman-support nil
@@ -291,29 +286,12 @@ ecb-frame. This advice is a permanent advice set!"
   (if (equal (selected-frame) ecb-frame)
       (ecb-error "Can't use winner-mode functions in the ecb-frame.")))
 
-(when-ecb-running-xemacs
-  (defecb-advice push-window-configuration before ecb-winman-not-supported-function-advices
-    (if (and (equal (selected-frame) ecb-frame)
-             (ecb-interactive-p))
-        (ecb-error "Can't use interactive push-window-configuration in the ecb-frame.")))
-
-  (defecb-advice pop-window-configuration before ecb-winman-not-supported-function-advices
-    (if (and (equal (selected-frame) ecb-frame)
-             (ecb-interactive-p))
-        (ecb-error "Can't use interactive pop-window-configuration in the ecb-frame.")))
-  
-  (defecb-advice unpop-window-configuration before ecb-winman-not-supported-function-advices
-    (if (and (equal (selected-frame) ecb-frame)
-             (ecb-interactive-p))
-        (ecb-error "Can't use interactive unpop-window-configuration in the ecb-frame.")))
-  )
-
 ;; we disable all advices per default.
 
 (ecb-disable-advices 'ecb-winman-winring-adviced-functions t)
 (ecb-disable-advices 'ecb-winman-escreen-adviced-functions t)
 (ecb-disable-advices 'ecb-winman-not-supported-function-advices t)
 
-(silentcomp-provide 'ecb-winman-support)
+(provide 'ecb-winman-support)
 
 ;;; ecb-winman-support.el ends here

@@ -60,9 +60,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-compilation)
 (require 'ecb-layout)
 
@@ -132,6 +129,6 @@ Afterwards always the compile-window of ECB is selected."
     (switch-to-buffer buffer-name)))
 
 
-(silentcomp-provide 'ecb-cycle)
+(provide 'ecb-cycle)
 
 ;;; ecb-cycle.el ends here

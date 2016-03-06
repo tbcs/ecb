@@ -43,18 +43,6 @@
   ;; to avoid compiler grips
   (require 'cl))
 
-(eval-when-compile
-  (require 'silentcomp))
-
-(silentcomp-defun ecb-speedbar-update-contents)
-(silentcomp-defun vc-load-vc-hooks)
-;; (silentcomp-defvar vc-svn-admin-directory)
-(silentcomp-defun substring-no-properties)
-(silentcomp-defun vc-find-root)
-(silentcomp-defun vc-file-clearprops)
-(silentcomp-defun vc-state)
-(silentcomp-defvar dired-directory)
-
 ;;====================================================
 ;; Customization
 ;;====================================================
@@ -1234,8 +1222,8 @@ a certain backend-VC-state no mapping can be found then per default 'edited is
 assumed!
 
 The default value of this option maps already the possible returned
-state-values of `ecb-vc-state', `vc-state' and `vc-recompute-state' \(both GNU
-Emacs) and `vc-cvs-status' \(Xemacs) to the ECB-VC-state-values."
+state-values of `ecb-vc-state', `vc-state' and `vc-recompute-state' to the
+ECB-VC-state-values."
   :group 'ecb-version-control
   :group 'ecb-sources
   :initialize 'custom-initialize-default  
@@ -1808,7 +1796,7 @@ At the end the hooks in `ecb-basic-buffer-sync-hook' run."
                                              ;; also the drive is added.
                                              (substring norm-filename 0 2)))
                                        ;; add the full directory as source-path
-                                       (ecb-file-name-directory norm-filename))))
+                                       (file-name-directory norm-filename))))
                    (ecb-add-source-path source-path (ecb-fix-filename source-path)
                                         (not (cdr ecb-add-path-for-not-matching-files)))))
              
@@ -1836,7 +1824,7 @@ At the end the hooks in `ecb-basic-buffer-sync-hook' run."
              (eq major-mode 'dired-mode)
              (ecb-set-selected-directory
               (or (and (stringp dired-directory)
-                       (ecb-file-exists-p dired-directory)
+                       (file-exists-p dired-directory)
                        dired-directory)
                   (and (listp dired-directory)
                        (car dired-directory)))))
@@ -1902,12 +1890,12 @@ related threshold."
   "Return an expanded list of filenames which are excluded by the .cvsignore
 file in current directory."
   (let ((cvsignore-content (ecb-file-content-as-string
-                            (ecb-expand-file-name ".cvsignore" dir)))
+                            (expand-file-name ".cvsignore" dir)))
         (files nil))
     (when cvsignore-content
       (dolist (f (split-string cvsignore-content))
-        (setq files (append (ecb-directory-files dir nil
-                                                 (wildcard-to-regexp f) t)
+        (setq files (append (directory-files dir nil
+                                             (wildcard-to-regexp f) t)
                             files)))
       files)))
 
@@ -1926,8 +1914,8 @@ and IGNORE-CASE return a function which can be used as argument for `sort'."
     (extension
      (function
       (lambda(a b)
-        (let ((ext-a (ecb-file-name-extension a t))
-              (ext-b (ecb-file-name-extension b t)))
+        (let ((ext-a (file-name-extension a t))
+              (ext-b (file-name-extension b t)))
           (if (ecb-string= ext-a ext-b ecb-sources-sort-ignore-case)
               (ecb-string< a b ecb-sources-sort-ignore-case)
             (ecb-string< ext-a ext-b ecb-sources-sort-ignore-case))))))
@@ -1943,7 +1931,7 @@ according to `ecb-sources-sort-method'."
   (when (file-accessible-directory-p dir)
       (or (ecb-files-and-subdirs-cache-get dir)
 	  ;; dir is not cached
-	  (let ((files (ecb-directory-files dir nil nil t))
+	  (let ((files (directory-files dir nil nil t))
 		(source-regexps (or (ecb-check-directory-for-source-regexps
 				     (ecb-fix-filename dir))
 				    '(("") (""))))
@@ -1960,9 +1948,9 @@ according to `ecb-sources-sort-method'."
 	    ;; 2000 entries) this is the performance-bottleneck in the
 	    ;; file-browser of ECB.
 	    (dolist (file sorted-files)
-	      (if (ecb-file-directory-p (ecb-fix-filename dir file))
+	      (if (file-directory-p (ecb-fix-filename dir file))
 		  (when (not (ecb-check-dir-exclude file))
-;;                 (when (not (ecb-file-accessible-directory-p file))
+;;                 (when (not (file-accessible-directory-p file))
 ;;                   (ecb-merge-face-into-text file
 ;;                                             ecb-directory-not-accessible-face))
 		    (setq subdirs (append subdirs (list file))))
@@ -2050,7 +2038,7 @@ selected before this update."
   (ecb-sources-filter-by-ext
    (read-string "Insert the filter-extension without leading dot: "
                 (and node
-                     (ecb-file-name-extension (tree-node->data node))))))
+                     (file-name-extension (tree-node->data node))))))
 
 (defun ecb-sources-filter-by-regexp (&optional regexp filter-display)
   "Filter history entries by REGEXP. If the first optional argument REGEXP is
@@ -2327,16 +2315,16 @@ then nothing is done unless first optional argument FORCE is not nil."
 
 (defun ecb-get-source-name (filename)
   "Returns the source name of a file."
-  (let ((f (ecb-file-name-nondirectory filename)))
+  (let ((f (file-name-nondirectory filename)))
     (if ecb-show-source-file-extension
         f
-      (ecb-file-name-sans-extension f))))
+      (file-name-sans-extension f))))
 
 (defun ecb-select-source (&optional force)
   "Updates the directories, sources and history buffers to match the filename
 given. If FORCE is not nil then the update of the directories buffer is done
 even if current directory is equal to `ecb-path-selected-directory'."
-  (ecb-set-selected-directory (ecb-file-name-directory
+  (ecb-set-selected-directory (file-name-directory
                                (ecb-path-selected-source 'file)) force)
     
   ;; Update directory buffer
@@ -2553,9 +2541,9 @@ Returns t if the current history filter has been applied otherwise nil."
                                         ((directory directory-with-source-path)
                                          (ecb-substring-no-properties
                                           (ecb-fix-filename
-                                           (ecb-file-name-directory
+                                           (file-name-directory
                                             (cdr elem)))
-                                          (if ecb-running-xemacs 0)))
+                                          nil))
                                         (mode (symbol-name
                                                (if (ecb-buffer-obj (car elem))
                                                    (with-current-buffer (ecb-buffer-obj (car elem))
@@ -2692,7 +2680,7 @@ Returns t if the current history filter has been applied otherwise nil."
                                                ecb-history-dead-buffer-face))
                                              (t buf-name)))
                    (file-name (cdr elem))
-                   (dir (ecb-file-name-directory file-name))
+                   (dir (file-name-directory file-name))
                    (vc-p (and (ecb-vc-directory-should-be-checked-p dir)
                               (ecb-vc-managed-dir-p dir)))
                    (node-name (if vc-p
@@ -2811,7 +2799,7 @@ indirect-buffer."
   (let ((old-children (tree-node->children node))
         (path (tree-node->data node)))
     (setf (tree-node->children node) nil)
-    (if (ecb-file-accessible-directory-p path)
+    (if (file-accessible-directory-p path)
         (let ((files-and-dirs (ecb-get-files-and-subdirs path)))
           (ecb-tree-node-add-files node path (cdr files-and-dirs)
                                    ecb-directories-nodetype-directory
@@ -2865,7 +2853,7 @@ Subnodes can be directories or sources."
                  (not-accessible nil))
             (if (or (not remote-dir)
                     (ecb-host-accessible-p (nth 1 remote-dir)))
-                (if (ecb-file-accessible-directory-p dir)
+                (if (file-accessible-directory-p dir)
                     (tree-node-add-children
                      node
                      (ecb-new-child old-children name
@@ -2915,13 +2903,6 @@ doesn't match any regexp of `ecb-host-accessible-check-valid-time' then return
 
 ;; (ecb-host-accessible-p "ecb.cvs.sourceforge.net")
 
-(silentcomp-defun ange-ftp-ftp-name)
-(silentcomp-defun efs-ftp-path)
-(silentcomp-defun tramp-tramp-file-p)
-(silentcomp-defun tramp-file-name-path)
-(silentcomp-defun tramp-file-name-localname)
-(silentcomp-defun tramp-file-name-host)
-(silentcomp-defun tramp-dissect-file-name)
 (defun ecb-remote-path (path)
   "Test if PATH is a remote path and dissect it into components if yes.
 Returns a list (FULL-HOST-USER-PART HOST REAL-PATH), or nil if PATH is not a
@@ -2981,8 +2962,8 @@ component after that :-separator. Supports tramp, ange-ftp and efs."
              (equal (cdr cache-value) show-sources))
         (car cache-value)
       (ecb-directory-empty-cache-remove dir)
-      (let ((entries (and (ecb-file-accessible-directory-p dir)
-                          (ecb-directory-files dir nil nil t)))
+      (let ((entries (and (file-accessible-directory-p dir)
+                          (directory-files dir nil nil t)))
             (just-files-means-empty (not show-sources))
             (full-file-name nil)
             (empty-p nil))
@@ -2991,7 +2972,7 @@ component after that :-separator. Supports tramp, ange-ftp and efs."
                 (dolist (e entries)
                   (when (not (member e '("." ".." "CVS")))
                     (setq full-file-name (ecb-fix-filename dir e))
-                    (if (ecb-file-directory-p full-file-name)
+                    (if (file-directory-p full-file-name)
                         (throw 'found 'nil)
                       (if (not just-files-means-empty)
                           (throw 'found 'nil)))))
@@ -3026,7 +3007,7 @@ directory. This function is only for use by `ecb-stealthy-updates'!"
                                       ;;      (tree-node->type curr-node)))
                                     (ecb-directory-should-prescanned-p
                                      (tree-node->data curr-node))
-                                    (ecb-file-exists-p
+                                    (file-exists-p
                                      (tree-node->data curr-node)))
                            (setq dir-empty-p
                                  (ecb-check-emptyness-of-dir (tree-node->data curr-node)))
@@ -3083,10 +3064,10 @@ when called. Return the new state-value."
             (setq curr-node (tree-buffer-get-node-at-point))
             (when (and (member (tree-node->type curr-node) node-types-to-check)
                        (ecb-sources-read-only-check-p
-                        (ecb-file-name-directory (tree-node->data curr-node))))
+                        (file-name-directory (tree-node->data curr-node))))
               (setq new-name (tree-node->name curr-node))
               (setq read-only-p
-                    (not (ecb-file-writable-p (tree-node->data curr-node))))
+                    (not (file-writable-p (tree-node->data curr-node))))
               (if read-only-p
                   (ecb-merge-face-into-text new-name
                                             ecb-source-read-only-face))
@@ -3212,7 +3193,7 @@ new state."
           (and last-check-time
                (or (null last-state) ;; FILE has been checked but is not in VC
                    (not (ecb-time-less-p last-check-time
-                                         (ecb-subseq (nth 5 (ecb-file-attributes file))
+                                         (ecb-subseq (nth 5 (file-attributes file))
                                                      0 2))))))
          (result nil))
     (if no-need-for-state-check-p
@@ -3326,7 +3307,7 @@ the SOURCES-cache."
 (defun ecb-vc-dir-managed-by-CVS (directory)
   "Return 'CVS if DIRECTORY is managed by CVS. nil if not."
   (and (locate-library "vc-cvs")
-       (ecb-file-exists-p (concat directory "/CVS/"))
+       (file-exists-p (concat directory "/CVS/"))
        (require 'vc)
        (require 'vc-cvs)
        'CVS))
@@ -3334,7 +3315,7 @@ the SOURCES-cache."
 (defun ecb-vc-dir-managed-by-RCS (directory)
   "Return 'RCS if DIRECTORY is managed by RCS. nil if not."
   (and (locate-library "vc-rcs")
-       (ecb-file-exists-p (concat directory "/RCS/"))
+       (file-exists-p (concat directory "/RCS/"))
        (require 'vc)
        (require 'vc-rcs)
        'RCS))
@@ -3346,7 +3327,7 @@ the SOURCES-cache."
                                     (getenv "SVN_ASP_DOT_NET_HACK"))
                                "_svn")
                               (t ".svn"))))
-         (ecb-file-exists-p (concat directory "/" admin-dir "/")))
+         (file-exists-p (concat directory "/" admin-dir "/")))
        (require 'vc)
        (require 'vc-svn)
        'SVN))
@@ -3354,11 +3335,11 @@ the SOURCES-cache."
 (defun ecb-vc-dir-managed-by-SCCS (directory)
   "Return 'SCCS if DIRECTORY is managed by SCCS. nil if not."
   (and (locate-library "vc-sccs")
-       (or (ecb-file-exists-p (concat directory "/SCCS/"))
+       (or (file-exists-p (concat directory "/SCCS/"))
            ;; Remote SCCS project
            (let ((proj-dir (getenv "PROJECTDIR")))
              (if proj-dir
-                 (ecb-file-exists-p (concat proj-dir "/SCCS")))))
+                 (file-exists-p (concat proj-dir "/SCCS")))))
        (require 'vc)
        (require 'vc-sccs)
        'SCCS))
@@ -3368,7 +3349,7 @@ the SOURCES-cache."
 (defun ecb-vc-dir-managed-by-BZR (directory) 
   "Return 'BZR if DIRECTORY is managed by Bazaar. nil if not." 
   (and (locate-library "vc-bzr")
-       (ecb-file-exists-p (concat directory "/" ".bzr"))
+       (file-exists-p (concat directory "/" ".bzr"))
        (require 'vc)
        (require 'vc-bzr)
        'BZR))
@@ -3381,10 +3362,6 @@ the SOURCES-cache."
   "Return 'HG if DIRECTORY is managed by Mercurial. nil if not.
 Because with Mercurial only the top-most directory of a source-tree has a subdir
 .hg this function tries recursively upwards if there is a .hg-subdir."
-  ;; With XEmacs we must first load the vc-hooks which contain the function
-  ;; `vc-find-root'
-  (when ecb-running-xemacs
-    (ignore-errors (vc-load-vc-hooks)))
   (and (locate-library "vc-hg")
        (fboundp 'vc-find-root)
        (vc-find-root directory ".hg")
@@ -3398,10 +3375,6 @@ Because with Mercurial only the top-most directory of a source-tree has a subdir
   "Return 'GIT if DIRECTORY is managed by Git. nil if not.
 Because with Git only the top-most directory of a source-tree has a subdir
 .git this function tries recursively upwards if there is a .git-subdir."
-  ;; With XEmacs we must first load the vc-hooks which contain the function
-  ;; `vc-find-root'
-  (when ecb-running-xemacs
-    (ignore-errors (vc-load-vc-hooks)))
   (and (locate-library "vc-git")
        (fboundp 'vc-find-root)
        (vc-find-root directory ".git")
@@ -3413,7 +3386,7 @@ Because with Git only the top-most directory of a source-tree has a subdir
 ;; (defun ecb-vc-dir-managed-by-GIT (directory)
 ;;   (let* ((sourcedir (ecb-fix-filename (file-truename directory)))
 ;;          (gitdir (concat sourcedir "/.git/")))
-;;     (if (and (ecb-file-exists-p gitdir)
+;;     (if (and (file-exists-p gitdir)
 ;;              (locate-library "vc-git"))
 ;;         'GIT
 ;;       (if (equal sourcedir (ecb-fix-filename "/"))
@@ -3426,10 +3399,6 @@ Because with Git only the top-most directory of a source-tree has a subdir
 
 (defun ecb-vc-dir-managed-by-MTN (directory)
   "Return 'MTN if DIRECTORY is managed by Monotone. nil if not."
-  ;; With XEmacs we must first load the vc-hooks which contain the function
-  ;; `vc-find-root'
-  (when ecb-running-xemacs
-    (ignore-errors (vc-load-vc-hooks)))
   (and (locate-library "vc-mtn")
        (fboundp 'vc-find-root)
        (vc-find-root directory "_MTN/format")
@@ -3445,14 +3414,12 @@ Because with Git only the top-most directory of a source-tree has a subdir
 
 ;; Problem: is this OK to assume, that the clearcase-specific stuff is already
 ;; loaded? may be we need more checks here.
-(silentcomp-defun clearcase-file-is-in-view-p)
 (defun ecb-vc-dir-managed-by-CC (directory)
   "Return 'CC if DIRECTORY is managed by ClearCase. nil if not."
   (and (fboundp 'clearcase-file-is-in-view-p)
        (if (clearcase-file-is-in-view-p directory)
            'CC)))
 
-(silentcomp-defun clearcase-compute-next-action)
 (defun ecb-vc-check-CC-state (file)
   "Checks the VC-state of FILE when under Control of Clearcase.
 Returns the following different state-values: 'unknown, 'up-to-date, 'edited
@@ -3604,10 +3571,10 @@ state-value."
               (ecb-goto-line state)
               (setq curr-node (tree-buffer-get-node-at-point))
               (when (member (tree-node->type curr-node) node-types-to-check)
-                (setq curr-dir (ecb-file-name-directory
+                (setq curr-dir (file-name-directory
                                 (ecb-source-get-filename (tree-node->data curr-node))))
                 (when (and (ecb-vc-directory-should-be-checked-p curr-dir)
-                           (ecb-file-exists-p (ecb-source-get-filename
+                           (file-exists-p (ecb-source-get-filename
                                                (tree-node->data curr-node))))
                   (setq vc-state-fcn (ecb-vc-get-state-fcn-for-dir curr-dir))
                   (when vc-state-fcn ;; file is under VC-control
@@ -3658,7 +3625,7 @@ stealthy-function has when called. Return the new state-value."
                 (ecb-throw-on-input 'lines-of-buffer-loop)
                 (ecb-goto-line state)
                 (setq curr-node (tree-buffer-get-node-at-point))
-                (if (ecb-file-exists-p (tree-node->data curr-node))
+                (if (file-exists-p (tree-node->data curr-node))
                     (progn
                       (setq new-name (tree-node->name curr-node))
                       (setq new-state
@@ -3801,7 +3768,7 @@ checkedin file is cleared. Uses `ecb-checkedin-file' as last checked-in file."
   "Ensures that the ECB-cache is reset and the entry for the currently
 reverted file-buffer is cleared."
   (let ((file (ignore-errors (ecb-fix-filename (ecb-buffer-file-name)))))
-    (when (and file (ecb-file-exists-p file))
+    (when (and file (file-exists-p file))
       (ecb-vc-cache-remove file)
       (ecb-vc-reset-vc-stealthy-checks))))
 
@@ -3862,7 +3829,7 @@ performing a `tree-buffer-update' for this buffer."
       (let* ((filename (ecb-fix-filename path file))
              (file-1 (if include-extension
                          file
-                       (ecb-file-name-sans-extension file))))
+                       (file-name-sans-extension file))))
         (tree-node-add-children
          node
          (ecb-new-child
@@ -3906,7 +3873,7 @@ is created."
   (let* ((use-dialog-box nil)
          (my-dir (ecb-fix-filename
                   (or dir
-                      (ecb-file-name-directory (read-file-name "Add source path: ")))
+                      (file-name-directory (read-file-name "Add source path: ")))
                   nil t))
          (my-alias (or alias
                        (read-string (format "Alias for \"%s\" (empty = no alias): "
@@ -4092,7 +4059,7 @@ can last a long time - depending of machine- and disk-performance."
 
 (defun ecb-get-file-info-text (file)
   "Return a file-info string for a file in the ECB sources buffer"
-  (let ((attrs (ecb-file-attributes file)))
+  (let ((attrs (file-attributes file)))
     (format "%s %8s %4d %10d %s %s"
 	    (nth 8 attrs)
 	    (user-login-name (nth 2 attrs))
@@ -4101,7 +4068,7 @@ can last a long time - depending of machine- and disk-performance."
 	    (format-time-string "%Y/%m/%d %H:%M" (nth 5 attrs))
             (if (equal (cdr ecb-sources-show-node-info) 'file-info-full)
                 file
-              (ecb-file-name-nondirectory file)))
+              (file-name-nondirectory file)))
     ))
 
 
@@ -4177,11 +4144,11 @@ the help-text should be printed here."
   "Creates a new sourcefile in current directory."
   (let* ((use-dialog-box nil)
          (dir (ecb-fix-filename
-               (funcall (if (ecb-file-directory-p (tree-node->data node))
+               (funcall (if (file-directory-p (tree-node->data node))
                             'identity
-                          'ecb-file-name-directory)
+                          'file-name-directory)
                         (tree-node->data node))))
-         (filename (ecb-file-name-nondirectory
+         (filename (file-name-nondirectory
                     (read-file-name "Source name: " (concat dir "/")))))
     (ecb-select-edit-window)
     (if (save-match-data (string-match "\\.java$" filename))
@@ -4201,9 +4168,9 @@ the help-text should be printed here."
   (ecb-select-edit-window)
   (let* ((node-data-file (ecb-source-get-filename (tree-node->data node)))
          (default-directory (concat (ecb-fix-filename
-                                     (if (ecb-file-directory-p node-data-file)
+                                     (if (file-directory-p node-data-file)
                                          node-data-file
-                                       (ecb-file-name-directory node-data-file)))
+                                       (file-name-directory node-data-file)))
                                     (ecb-directory-sep-string node-data-file))))
     (call-interactively (if find
                             (or (and (fboundp ecb-grep-recursive-function)
@@ -4244,9 +4211,9 @@ the help-text should be printed here."
   (ecb-select-edit-window)
   (let* ((node-data-file (ecb-source-get-filename (tree-node->data node)))
          (dir (ecb-fix-filename
-               (funcall (if (ecb-file-directory-p node-data-file)
+               (funcall (if (file-directory-p node-data-file)
                             'identity
-                          'ecb-file-name-directory)
+                          'file-name-directory)
                         node-data-file))))
     (funcall (if other
                  'dired-other-window
@@ -4414,8 +4381,8 @@ edit-windows. Otherwise return nil."
 (tree-buffer-defpopup-command ecb-delete-source
   "Deletes current sourcefile."
   (let* ((file (ecb-source-get-filename (tree-node->data node)))
-         (dir (ecb-fix-filename (ecb-file-name-directory file))))
-    (when (ecb-confirm (concat "Really delete " (ecb-file-name-nondirectory file) "? "))
+         (dir (ecb-fix-filename (file-name-directory file))))
+    (when (ecb-confirm (concat "Really delete " (file-name-nondirectory file) "? "))
       (when (get-file-buffer file)
         ;; if there is an open buffer for this source then we kill them - this
         ;; ensures also that if there are indirect-buffers to this base-buffer
@@ -4465,7 +4432,7 @@ edit-windows. Otherwise return nil."
 (tree-buffer-defpopup-command ecb-file-popup-vc-refresh-dir
   "Recompute the VC-state-values for the whole directory."
   (let ((dir (ecb-fix-filename
-              (ecb-file-name-directory
+              (file-name-directory
                (ecb-source-get-filename (tree-node->data node))))))
     (ecb-vc-cache-remove-files-of-dir dir)
     (ecb-vc-reset-vc-stealthy-checks)))
@@ -4493,7 +4460,7 @@ edit-windows. Otherwise return nil."
 
 (defvar ecb-sources-menu-title-creator
   (function (lambda (node)
-              (ecb-file-name-nondirectory (tree-node->data node))))
+              (file-name-nondirectory (tree-node->data node))))
   "The menu-title for the sources menu. See
 `ecb-directories-menu-title-creator'.")
 
@@ -4549,7 +4516,7 @@ applied otherwise nil."
   "Filter history entries by extension."
   (let ((ext-str (read-string "Insert the filter-extension without leading dot: "
                               (and node
-                                   (ecb-file-name-extension
+                                   (file-name-extension
                                     (ecb-source-get-filename (tree-node->data node)))))))
     (ecb-history-filter-by-ext ext-str)))
 
@@ -4891,6 +4858,6 @@ So you get a better overlooking. There are three choices:
                        ecb-history-buffer-after-create-hook)
    :after-update-hook 'ecb-stealth-tasks-after-history-update))
 
-(silentcomp-provide 'ecb-file-browser)
+(provide 'ecb-file-browser)
 
 ;;; ecb-file-browser.el ends here

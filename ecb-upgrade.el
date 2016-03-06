@@ -149,9 +149,6 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
 ;; IMPORTANT: The version-number is auto-frobbed from the Makefile. Do not
 ;; change it here!
 ;; TODO: Makefile frobbing broken
@@ -163,9 +160,6 @@
   (require 'cl))
 
 (require 'ecb-util)
-
-(silentcomp-defun widget-convert)
-(silentcomp-defun ecb-find-optionsym-for-tree-buffer-name)
 
 ;; -------------------------------------------------------------------------
 ;; define in this defconst all important NEWS which a user should know after
@@ -876,16 +870,10 @@ Note: This function upgrades only the renamed but not the incompatible options
                         ecb-renamed-options))))))))
 
 (require 'wid-edit)
-(silentcomp-defvar widget-button-keymap)
-(silentcomp-defvar widget-keymap)
 
 (defvar ecb-upgrade-button-keymap
   (let (parent-keymap mouse-button1 keymap)
-    (if ecb-running-xemacs
-        (setq parent-keymap widget-button-keymap
-              mouse-button1 [button1])
-      (setq parent-keymap widget-keymap
-            mouse-button1 [down-mouse-1]))
+    (setq parent-keymap widget-keymap mouse-button1 [down-mouse-1])
     (setq keymap (copy-keymap parent-keymap))
     (define-key keymap mouse-button1 #'widget-button-click)
     keymap)
@@ -1017,8 +1005,7 @@ your customization-file!"
                             'ecb-upgrades-saved))
               ;; Insert the Save button
               (widget-create 'push-button
-                             :button-keymap ecb-upgrade-button-keymap ; XEmacs
-                             :keymap ecb-upgrade-button-keymap ; Emacs
+                             :keymap ecb-upgrade-button-keymap
                              :notify (lambda (&rest ignore)
                                        (if (get 'ecb-display-upgraded-options
                                                 'ecb-upgrades-saved)
@@ -1041,8 +1028,7 @@ your customization-file!"
               (widget-insert " ")))
           ;; Insert the Cancel button
           (widget-create 'push-button
-                         :button-keymap ecb-upgrade-button-keymap ; XEmacs
-                         :keymap ecb-upgrade-button-keymap ; Emacs
+                         :keymap ecb-upgrade-button-keymap
                          :notify (lambda (&rest ignore)
                                    (kill-buffer (current-buffer)))
                          "Close")
@@ -1084,8 +1070,7 @@ your customization-file!"
         (when (ecb-custom-file-writeable-p)
           ;; Insert the Save button
           (widget-create 'push-button
-                         :button-keymap ecb-upgrade-button-keymap ; XEmacs
-                         :keymap ecb-upgrade-button-keymap ; Emacs
+                         :keymap ecb-upgrade-button-keymap
                          :notify (lambda (&rest ignore)
                                    (ecb-upgrade-make-copy-of-custom-file)
                                    (ecb-store-current-options-version)
@@ -1094,8 +1079,7 @@ your customization-file!"
           (widget-insert " "))
         ;; Insert the Close button
         (widget-create 'push-button
-                       :button-keymap ecb-upgrade-button-keymap ; XEmacs
-                       :keymap ecb-upgrade-button-keymap ; Emacs
+                       :keymap ecb-upgrade-button-keymap
                        :notify (lambda (&rest ignore)
                                  (kill-buffer (current-buffer)))
                        "Close")
@@ -1162,9 +1146,6 @@ Currently this is a check if the right `cedet-version is loaded."
   ;; we do not support (X)Emacs 18, 19 or 20!
   (when ecb-running-unsupported-emacs
     (ecb-error "Sorry, but ECB requires an (X)Emacs-version >= 21!"))
-
-  (when ecb-regular-xemacs-package-p
-    (ecb-error "Sorry, but ECB is currently not runnable as XEmacs-package. Install \"by hand\"."))
 
   (when ecb-cedet-missing-libraries
     (ecb-error "ECB is missing the libs %s of CEDET - check the CEDET-installation/setup!"
@@ -1268,6 +1249,6 @@ Return nil if ver-str has not the required syntax:
 ;; TODO: Klaus Berndl <klaus.berndl@sdm.de>: remove from texi the whole
 ;; download stuff inkl. in the command ssection ecb-download-*
 
-(silentcomp-provide 'ecb-upgrade)
+(provide 'ecb-upgrade)
 
 ;;; ecb-upgrade.el ends here

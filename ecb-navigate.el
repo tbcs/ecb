@@ -36,9 +36,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-cedet-wrapper)
 (require 'ecb-util)
 
@@ -380,6 +377,6 @@ necessary."
     (ecb-nav-goto (ecb-get-data node))))
 
 
-(silentcomp-provide 'ecb-navigate)
+(provide 'ecb-navigate)
 
 ;;; ecb-navigate.el ends here

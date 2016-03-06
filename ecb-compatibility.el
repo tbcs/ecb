@@ -38,10 +38,6 @@
 ;; This file is part of the ECB package which can be found at:
 ;; http://ecb.sourceforge.net
 
-(eval-when-compile
-  (require 'silentcomp))
-
-
 (require 'ecb-util)
 (require 'ecb-common-browser)
 (require 'ecb-layout)
@@ -213,9 +209,6 @@ BUFFER is displayed in an edit-window!"
 
 ;; ediff-stuff ---------------------------------------------------------------
 
-(silentcomp-defun ediff-cleanup-mess)
-(silentcomp-defvar ediff-quit-hook)
-
 (defvar ecb-before-ediff-window-config nil)
 
 ;; We must not add this function to `ediff-before-setup-windows-hook' because
@@ -355,6 +348,6 @@ selected afterwards."
 ;; we disable the advices at load-time
 (ecb-disable-advices 'ecb-compatibility-advices t)
 
-(silentcomp-provide 'ecb-compatibility)
+(provide 'ecb-compatibility)
 
 ;;; ecb-compatibility.el ends here

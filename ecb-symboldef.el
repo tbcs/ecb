@@ -50,14 +50,6 @@
 (require 'ecb-common-browser)
 (require 'ecb-cedet-wrapper)
 
-(eval-when-compile
-  (require 'silentcomp))
-
-;; XEmacs-stuff
-(silentcomp-defun find-tag-internal)
-;; Emacs stuff
-(silentcomp-defun find-tag-noselect)
-
 ;; TODO: Klaus Berndl <klaus.berndl@sdm.de>: BTW add symboldef to the
 ;; maximize menu of ECB when reworked ecb-symboldef.el! and also to
 ;; some other menues...
@@ -297,9 +289,6 @@ EDIT-BUFFER is that buffer VSYMBOL is used."
         (eieio-help-mode-augmentation-maybee)))
     (buffer-string)))
 
-(silentcomp-defun function-at-point)
-(silentcomp-defun function-called-at-point)
-
 (defun ecb-function-at-point ()
   "Return the function whose name is around point.
 If that gives no function, return the function which is called by the
@@ -325,12 +314,6 @@ list containing point.  If that doesn't give a function, return nil."
 	      (setq obj (read (current-buffer)))
 	      (and (symbolp obj) (fboundp obj) obj)))))))
 
-(defun ecb-symboldef-function-at-point ()
-  "Returns the function around point or nil if there is no function around."
-  (if ecb-running-xemacs
-      (function-at-point)
-    (function-called-at-point)))
-    
 (defun ecb-symboldef-find-lisp-doc (symbol-name edit-buffer)
   "Insert the lisp-documentation of symbol with name SYMBOL-NAME."
   (setq truncate-lines nil)
@@ -346,12 +329,8 @@ list containing point.  If that doesn't give a function, return nil."
     ;; - display conditions for function symbols (length, regexp to match)
     (when (setq fsymbol
                 (with-current-buffer edit-buffer
-                  (ecb-symboldef-function-at-point)))
-      (unless ecb-running-xemacs
-        ;; With XEmacs the symbol itself is already contained in the
-        ;; docstring describe-function-1 returns - with Emacs we must add it
-        ;; for ourself.
-        (insert (format "%s is " fsymbol)))
+                  (function-called-at-point)))
+      (insert (format "%s is " fsymbol))
       (let ((standard-output (current-buffer)))
         (describe-function-1 fsymbol))
       (let ((beg nil)
@@ -521,17 +500,12 @@ Returns nil if not found otherwise a list \(tag-buffer tag-begin tag-end)"
   "Try to find the definition of SYMBOL-NAME via etags.
 Returns nil if not found otherwise a list \(tag-buffer tag-begin tag-end)
 whereas tag-end is currently always nil."
-  (if ecb-running-xemacs
-      (let ((result (ignore-errors (find-tag-internal (list symbol-name)))))
-	(if result
-	    (list (car result) (cdr result) nil)))
-    ;; else gnu emacs:
-    (let* ((result-buf (ignore-errors (find-tag-noselect symbol-name)))
-	   (result-point (if result-buf 
-                             (with-current-buffer result-buf
-                               (point)))))
-      (if result-buf
-	  (list result-buf result-point nil)))))
+  (let* ((result-buf (ignore-errors (find-tag-noselect symbol-name)))
+         (result-point (if result-buf
+                           (with-current-buffer result-buf
+                             (point)))))
+    (if result-buf
+        (list result-buf result-point nil))))
 
 (defun ecb-symboldef-find-definition (symbol-name edit-buffer)
   "Inserts the definition of symbol with name SYMBOL-NAME.
@@ -640,6 +614,6 @@ ECB-symboldefinition-window is not visible in current layout."
   (interactive)
   (ecb-goto-ecb-window ecb-symboldef-buffer-name))
 
-(silentcomp-provide 'ecb-symboldef)
+(provide 'ecb-symboldef)
 
 ;;; ecb-symboldef.el ends here

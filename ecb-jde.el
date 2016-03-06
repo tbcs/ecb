@@ -40,19 +40,6 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
-(silentcomp-defun jde-show-class-source)
-(silentcomp-defvar jde-open-class-at-point-find-file-function)
-(silentcomp-defun jde-open-functions-exist)
-(silentcomp-defun jde-parse-java-variable-at-point)
-(silentcomp-defun jde-open-get-class-to-open)
-(silentcomp-defun jde-open-get-path-prefix-list)
-(silentcomp-defun jde-open-find-java-file-name)
-(silentcomp-defun jde-gen-class-buffer)
-(silentcomp-defvar jde-sourcepath)
-
 (require 'ecb-util)
 (require 'ecb-layout)
 (require 'ecb-file-browser)
@@ -174,6 +161,6 @@ is not available then `find-file' is called."
                 (function (lambda ()
                             (ecb-toggle-compile-window 1))))))
 
-(silentcomp-provide 'ecb-jde)
+(provide 'ecb-jde)
 
 ;;; ecb-jde.el ends here

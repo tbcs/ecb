@@ -37,9 +37,6 @@
 (require 'ecb-cedet-wrapper)
 
 (eval-when-compile
-  (require 'silentcomp))
-
-(eval-when-compile
   ;; to avoid compiler grips
   (require 'cl))
 
@@ -709,6 +706,6 @@ analyse-buffer."
 
 
 
-(silentcomp-provide 'ecb-analyse)
+(provide 'ecb-analyse)
 
 ;;; ecb-anaylse.el ends here

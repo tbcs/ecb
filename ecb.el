@@ -133,9 +133,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'info)
 
 ;; We need this libraries already here if we miss some requirements
@@ -199,9 +196,6 @@
 (eval-when-compile
   ;; to avoid compiler grips
   (require 'cl))
-
-;; XEmacs
-(silentcomp-defun ecb-redraw-modeline)
 
 ;;====================================================
 ;; Variables
@@ -352,10 +346,9 @@ It is strongly recommended to set this option to not nil!"
 (defcustom ecb-debug-mode nil
   "*If not nil ECB displays debug-information in the Messages-buffer.
 This is done for some critical situations concerning semantic-tags and their
-overlays \(or extends for XEmacs). Normally you should not need this switched
-on! But if you get errors like \"destroyed extend\" for XEmacs or
-\"wrong-argument-type\" concerning overlays for GNU Emacs then you should
-switch on this option and submitting a bug-report to the ecb-mailing-list
+overlays.  Normally you should not need this switched on!  But if you get errors
+like \"wrong-argument-type\" concerning overlays then you should switch on this
+option and submitting a bug-report to the ecb-mailing-list
 \(`ecb-submit-problem-report') after getting the error again!"
   :group 'ecb-general
   :type 'boolean)
@@ -499,476 +492,393 @@ ecb-window."
 ;; ECB minor mode: Create buffers & menus & maps
 ;;====================================================
 
-(defun ecb-menu-item (item)
-  "Build an XEmacs compatible menu item from vector ITEM.
-That is remove the unsupported :help stuff."
-  (if ecb-running-xemacs
-      (let ((n (length item))
-            (i 0)
-            slot l)
-        (while (< i n)
-          (setq slot (aref item i))
-          (if (and (keywordp slot)
-                   (eq slot :help))
-              (setq i (1+ i))
-            (setq l (cons slot l)))
-          (setq i (1+ i)))
-        (apply #'vector (nreverse l)))
-    item))
-
 (defvar ecb-menu-name "ECB")
 (defvar ecb-menu-bar
   (list
    ecb-menu-name
-   (ecb-menu-item
     [ "Select ECB frame"
       ecb-select-ecb-frame
       :active (and ecb-minor-mode
                    (not (equal (selected-frame) ecb-frame)))
       :help "Select the ECB-frame."
-      ])
-   (ecb-menu-item
+      ]
     [ "Synchronize ECB windows"
       (ecb-window-sync)
       :active (and (equal (selected-frame) ecb-frame)
                    (ecb-point-in-edit-window-number))
       :help "Synchronize the ECB windows with the current edit-window."
-      ])
-   (ecb-menu-item
+      ]
     [ "Update directories buffer"
       ecb-update-directories-buffer
       :active (equal (selected-frame) ecb-frame)
       :help "Updates the directories buffer with current disk-state"
-      ])
-   (ecb-menu-item
+      ]
     [ "Add all buffers to history"
       ecb-add-all-buffers-to-history
       :active (and (equal (selected-frame) ecb-frame)
                    (ecb-window-live-p ecb-history-buffer-name))
       :help "Add all current file-buffers to history"
-      ])
+      ]
    "-"
-   (ecb-menu-item
     [ "Rebuild methods buffer"
       ecb-rebuild-methods-buffer
       :active (equal (selected-frame) ecb-frame)
       :help "Rebuild the methods buffer completely"
-      ])
-   (ecb-menu-item
+      ]
     [ "Expand methods buffer"
       ecb-expand-methods-nodes
       :active (equal (selected-frame) ecb-frame)
       :help "Expand all nodes of a certain indent-level"
-      ])
-   (ecb-menu-item
+      ]
     [ "Toggle auto. expanding of the method buffer"
       ecb-toggle-auto-expand-tag-tree
       :active (equal (selected-frame) ecb-frame)
       :help "Toggle auto. expanding of the method buffer"
-      ])
+      ]
    "-"
-   (ecb-menu-item
     [ "Change layout"
       ecb-change-layout
       :active (equal (selected-frame) ecb-frame)
       :help "Change the layout."
-      ])
-   (ecb-menu-item
+      ]
     [ "Redraw layout"
       ecb-redraw-layout
       :active (equal (selected-frame) ecb-frame)
       :help "Redraw the current layout."
-      ])
-   (ecb-menu-item
+      ]
     [ "Toggle layout"
       ecb-toggle-layout
       :active (and (equal (selected-frame) ecb-frame)
                    (> (length ecb-toggle-layout-sequence) 1))
       :help "Toggle between several layouts"
-      ])
-   (ecb-menu-item
+      ]
     [ "Toggle visibility of ECB windows"
       ecb-toggle-ecb-windows
       :active (equal (selected-frame) ecb-frame)
       :help "Toggle the visibility of all ECB windows."
-      ])
+      ]
    (list
     "Layout administration"
-    (ecb-menu-item
      [ "Store current window-sizes"
        ecb-store-window-sizes
        :active (equal (selected-frame) ecb-frame)
        :help "Store current sizes of the ecb-windows in current layout."
-       ])
-    (ecb-menu-item
+       ]
      [ "Restore sizes of the ecb-windows"
        ecb-restore-window-sizes
        :active (equal (selected-frame) ecb-frame)
        :help "Restore the sizes of the ecb-windows in current layout."
-       ])
-    (ecb-menu-item
+       ]
      [ "Restore default-sizes of the ecb-windows"
        ecb-restore-default-window-sizes
        :active (equal (selected-frame) ecb-frame)
        :help "Restore the default-sizes of the ecb-windows in current layout."
-       ])
+       ]
     "-"
-    (ecb-menu-item
      [ "Create new layout"
        ecb-create-new-layout
        :active (equal (selected-frame) ecb-frame)
        :help "Create a new ECB-layout."
-       ])
-    (ecb-menu-item
+       ]
      [ "Delete new layout"
        ecb-delete-new-layout
        :active (equal (selected-frame) ecb-frame)
        :help "Delete an user-created ECB-layout."
-       ])
+       ]
     "-"
-    (ecb-menu-item
      [ "Show help for a layout"
        ecb-show-layout-help
        :active t
        :help "Show the documentation for a layout."
-       ]))
+       ])
    "-"
-   (ecb-menu-item
     [ "Toggle compile window"
       ecb-toggle-compile-window
       :active (equal (selected-frame) ecb-frame)
       :help "Toggle visibility of compile window."
-      ])
-   (ecb-menu-item
+      ]
     [ "Toggle enlarged compile window"
       ecb-toggle-compile-window-height
       :active (and (equal (selected-frame) ecb-frame)
                    ecb-compile-window
                    (ecb-compile-window-live-p))
       :help "Toggle enlarged compile window."
-      ])
+      ]
    "-"
    (list
     "Navigate"
-    (ecb-menu-item
      ["Previous \(back)"
       ecb-nav-goto-previous
       :active t
       :help "Go to the previous navigation point"
-      ])
-    (ecb-menu-item
+      ]
      ["Next \(forward)"
       ecb-nav-goto-next
       :active t
       :help "Go to the next navigation point"
-      ]))
+      ])
    (list
     "Goto window"
-    (ecb-menu-item
      ["Last selected edit-window"
       ecb-goto-window-edit-last
       :active t
       :help "Go to the last selected edit-window"
-      ])
-    (ecb-menu-item
+      ]
      ["Edit-window 1"
       ecb-goto-window-edit1
       :active t
       :help "Go to the first edit-window"
-      ])
-    (ecb-menu-item
+      ]
      ["Edit-window 2"
       ecb-goto-window-edit2
       :active (ecb-edit-window-splitted)
       :help "Go to the second edit-window \(if splitted\)"
-      ])
-    (ecb-menu-item
+      ]
      ["Directories"
       ecb-goto-window-directories
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-directories-buffer-name)
       :help "Go to the directories window"
-      ])
-    (ecb-menu-item
+      ]
      ["Sources"
       ecb-goto-window-sources
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-sources-buffer-name)
       :help "Go to the sources window"
-      ])
-    (ecb-menu-item
+      ]
      ["Methods and Variables"
       ecb-goto-window-methods
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-methods-buffer-name)
       :help "Go to the methods/variables window"
-      ])
-    (ecb-menu-item
+      ]
      ["History"
       ecb-goto-window-history
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-history-buffer-name)
       :help "Go to the history window"
-      ])
-    (ecb-menu-item
+      ]
      ["Analyse"
       ecb-goto-window-analyse
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-analyse-buffer-name)
       :help "Go to the analyse window"
-      ])
-    (ecb-menu-item
+      ]
      ["Speedbar"
       ecb-goto-window-speedbar
       :active (and ecb-use-speedbar-instead-native-tree-buffer
                    (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-speedbar-buffer-name))
       :help "Go to the integrated speedbar window"
-      ])
-    (ecb-menu-item
+      ]
      ["Compilation"
       ecb-goto-window-compilation
       :active (equal 'visible (ecb-compile-window-state))
       :help "Go to the history window"
-      ])
+      ]
     )
    (list
     "Display window maximized"
-    (ecb-menu-item
      ["Directories"
       ecb-maximize-window-directories
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-directories-buffer-name)
       :help "Maximize the directories window - even if currently not visible"
-      ])
-    (ecb-menu-item
+      ]
      ["Sources"
       ecb-maximize-window-sources
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-sources-buffer-name)
       :help "Maximize the sources window - even if currently not visible"
-      ])
-    (ecb-menu-item
+      ]
      ["Methods and Variables"
       ecb-maximize-window-methods
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-methods-buffer-name)
       :help "Maximize the methods/variables window - even if currently not visible"
-      ])
-    (ecb-menu-item
+      ]
      ["History"
       ecb-maximize-window-history
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-history-buffer-name)
       :help "Maximize the history window - even if currently not visible"
-      ])
-    (ecb-menu-item
+      ]
      ["Analyse"
       ecb-maximize-window-analyse
       :active (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-analyse-buffer-name)
       :help "Maximize the analyse window - even if currently not visible"
-      ])
-    (ecb-menu-item
+      ]
      ["Speedbar"
       ecb-maximize-window-speedbar
       :active (and ecb-use-speedbar-instead-native-tree-buffer
                    (ecb-buffer-is-ecb-buffer-of-current-layout-p ecb-speedbar-buffer-name))
       :help "Maximize the integrated speedbar window - even if not visible"
-      ])
+      ]
     )
    "-"
    (list
     "Preferences"
-    (ecb-menu-item
      ["Most important..."
       (customize-group "ecb-most-important")
       :active t
       :help "Customize the most important options"
-      ])
-    (ecb-menu-item
+      ]
      ["All..."
       (ecb-customize)
       :active t
       :help "Display all available option-groups..."
-      ])
+      ]
     "-"
-    (ecb-menu-item
      ["General..."
       (customize-group "ecb-general")
       :active t
       :help "Customize general ECB options"
-      ])
-    (ecb-menu-item
+      ]
      ["Directories..."
       (customize-group "ecb-directories")
       :active t
       :help "Customize ECB directories"
-      ])
-    (ecb-menu-item
+      ]
      ["Sources..."
       (customize-group "ecb-sources")
       :active t
       :help "Customize ECB sources"
-      ])
-    (ecb-menu-item
+      ]
      ["Methods..."
       (customize-group "ecb-methods")
       :active t
       :help "Customize ECB method display"
-      ])
-    (ecb-menu-item
+      ]
      ["History..."
       (customize-group "ecb-history")
       :active t
       :help "Customize ECB history"
-      ])
-    (ecb-menu-item
+      ]
      ["Analyse..."
       (customize-group "ecb-analyse")
       :active t
       :help "Customize ECB analyse ingeractor"
-      ])
-    (ecb-menu-item
+      ]
      ["Version control..."
       (customize-group "ecb-version-control")
       :active t
       :help "Customize the version-control-support"
-      ])
-    (ecb-menu-item
+      ]
      ["Layout..."
       (customize-group "ecb-layout")
       :active t
       :help "Customize ECB layout"
-      ])
-    (ecb-menu-item
+      ]
      ["Tree-buffer style and handling..."
       (customize-group "ecb-tree-buffer")
       :active t
       :help "Customize the tree-buffers of ECB"
-      ])
-    (ecb-menu-item
+      ]
      ["Face options..."
       (customize-group "ecb-face-options")
       :active t
       :help "Customize ECB faces"
-      ])
-    (ecb-menu-item
+      ]
      ["Help options..."
       (customize-group "ecb-help")
       :active t
       :help "Customize options for the online help of ECB"
-      ])
-    (ecb-menu-item
+      ]
      ["ECB/eshell options..."
       (customize-group "ecb-eshell")
       :active t
       :help "Customize options for the eshell integration of ECB"
-      ])
-    (ecb-menu-item
+      ]
      ["Supporting non-semantic-sources..."
       (customize-group "ecb-non-semantic")
       :active t
       :help "Customize options for parsing non-semantic-sources"
-      ])
-    (ecb-menu-item
+      ]
      ["Supporting window-managers..."
       (customize-group "ecb-winman-support")
       :active t
       :help "Customize options for the window-manager-support"
-      ])
+      ]
     )
    (list
     "Upgrade ECB"
-    (ecb-menu-item
      [ "Upgrade ECB-options to current ECB-version"
        ecb-upgrade-options
        :active (equal (selected-frame) ecb-frame)
        :help "Try to upgrade ECB-options to current ECB-version if necessary."
-       ])
+       ]
     )
    (list
     "Help"
-    (ecb-menu-item
      [ "Show Online Help"
        ecb-show-help
        :active t
        :help "Show the online help of ECB."
-       ])
-    (ecb-menu-item
+       ]
      [ "ECB NEWS"
        (ecb-display-news-for-upgrade t)
        :active t
        :help "Displays the NEWS-file of ECB."
-       ])
-    (ecb-menu-item
+       ]
      [ "List of most important options"
        (let ((ecb-show-help-format 'info))
          (ecb-show-help)
          (Info-goto-node "Most important options"))
        :active t
        :help "Displays a a list of options which you should know."
-       ])
-    (ecb-menu-item
+       ]
      [ "List of all options"
        (let ((ecb-show-help-format 'info))
          (ecb-show-help)
          (Info-goto-node "Option Index"))
        :active t
        :help "Displays an index of all user-options in the online-help."
-       ])
-    (ecb-menu-item
+       ]
      [ "List of all commands"
        (let ((ecb-show-help-format 'info))
          (ecb-show-help)
          (Info-goto-node "Command Index"))
        :active t
        :help "Displays an index of all commands in the online-help."
-       ])
-    (ecb-menu-item
+       ]
      [ "FAQ"
        (let ((ecb-show-help-format 'info))
          (ecb-show-help)
          (Info-goto-node "FAQ"))
        :active t
        :help "Show the FAQ of ECB."
-       ])
-    (ecb-menu-item
+       ]
      [ "Conflicts with other packages"
        (let ((ecb-show-help-format 'info))
          (ecb-show-help)
          (Info-goto-node "Conflicts and bugs"))
        :active t
        :help "What to do for conflicts with other packages."
-       ])
-    (ecb-menu-item
+       ]
      [ "Submit problem report"
        ecb-submit-problem-report
        :active t
        :help "Submit a problem report to the ECB mailing list."
-       ])
-    (ecb-menu-item
+       ]
      [ "ECB Debug mode"
        (setq ecb-debug-mode (not ecb-debug-mode))
        :active t
        :style toggle
        :selected ecb-debug-mode
        :help "Print debug-informations about parsing files in the message buffer."
-       ])
-    (ecb-menu-item
+       ]
      [ "ECB Layout Debug mode"
        (setq ecb-layout-debug-mode (not ecb-layout-debug-mode))
        :active t
        :style toggle
        :selected ecb-layout-debug-mode
        :help "Print debug-informations about window-operations in the message buffer."
-       ])
+       ]
     "-"
-    (ecb-menu-item
      ["Help preferences..."
       (customize-group "ecb-help")
       :active t
       :help "Customize options for the online help of ECB"
-      ])
+      ]
     "-"
     (concat "ECB " ecb-version)
     )
    "-"
-   (ecb-menu-item
     [ "Deactivate ECB"
       ecb-deactivate
       :active t
       :help "Deactivate ECB."
-      ])
+      ]
    )
   "Menu for ECB minor mode.")
 
@@ -1148,9 +1058,7 @@ always the ECB-frame if called from another frame."
   (let ((ecb-minor-mode t))
     (ecb-deactivate-internal t))
   (setq ecb-minor-mode nil)
-  (if ecb-running-xemacs
-      (ecb-redraw-modeline t)
-    (force-mode-line-update t))
+  (ecb-redraw-modeline t)
   (error "ECB %s: %s (error-type: %S, error-data: %S)" ecb-version msg
          (car err) (cdr err)))
 
@@ -1207,9 +1115,6 @@ value of VAR is as before storing a NEW-VALUE for variable-symbol VAR."
           (ecb-modify-emacs-variable 'max-specpdl-size 'store 3000))
         (when (< max-lisp-eval-depth 1000)
           (ecb-modify-emacs-variable 'max-lisp-eval-depth 'store 1000))
-        (when (and ecb-running-xemacs
-                   (boundp 'progress-feedback-use-echo-area))
-          (ecb-modify-emacs-variable 'progress-feedback-use-echo-area 'store t))
       
         ;; checking if there are cedet or semantic-load problems
         (ecb-check-cedet-load)
@@ -1332,10 +1237,7 @@ value of VAR is as before storing a NEW-VALUE for variable-symbol VAR."
               ;; enabling the VC-support
               (ecb-vc-enable-internals 1)
               
-              (add-hook (if ecb-running-xemacs
-                            'activate-menubar-hook
-                          'menu-bar-update-hook)
-                        'ecb-compilation-update-menu)
+              (add-hook 'menu-bar-update-hook 'ecb-compilation-update-menu)
               )
           (error
            ;;          (backtrace)
@@ -1418,20 +1320,6 @@ value of VAR is as before storing a NEW-VALUE for variable-symbol VAR."
            (ecb-clean-up-after-activation-failure
             "Errors during the hooks of ecb-activate-hook." err-obj)))
         
-        (condition-case err-obj
-            ;; enable mouse-tracking for the ecb-tree-buffers; we do this after
-            ;; running the personal hooks because if a user putﾴs activation of
-            ;; follow-mouse.el (`turn-on-follow-mouse') in the
-            ;; `ecb-activate-hook' then our own ECB mouse-tracking must be
-            ;; activated later. If `turn-on-follow-mouse' would be activated
-            ;; after our own follow-mouse stuff, it would overwrite our
-            ;; mechanism and the show-node-name stuff would not work!
-            (if (ecb-show-any-node-info-by-mouse-moving-p)
-                (tree-buffer-activate-follow-mouse))
-          (error
-           (ecb-clean-up-after-activation-failure
-            "Errors during the mouse-tracking activation." err-obj)))
-
         (setq ecb-minor-mode t)
         (message "The ECB is now activated.")
 
@@ -1507,10 +1395,6 @@ value of VAR is as before storing a NEW-VALUE for variable-symbol VAR."
       ;; eshell-advices! 
       (ecb-eshell-deactivate-integration)
 
-      ;; For XEmacs
-      (tree-buffer-activate-follow-mouse)
-      (tree-buffer-deactivate-follow-mouse)
-
       ;; remove the hooks
       (remove-hook (ecb--semantic-after-partial-cache-change-hook)
                    'ecb-update-after-partial-reparse)
@@ -1530,10 +1414,7 @@ value of VAR is as before storing a NEW-VALUE for variable-symbol VAR."
       ;; disabling the VC-support
       (ecb-vc-enable-internals -1)
       
-      (remove-hook (if ecb-running-xemacs
-                       'activate-menubar-hook
-                     'menu-bar-update-hook)
-                   'ecb-compilation-update-menu)
+      (remove-hook 'menu-bar-update-hook 'ecb-compilation-update-menu)
 
       ;; run any personal hooks
       (unless run-no-hooks
@@ -1630,13 +1511,9 @@ value of VAR is as before storing a NEW-VALUE for variable-symbol VAR."
 
       ;; restoring the value of temporary modified vars
       (ecb-modify-emacs-variable 'max-specpdl-size 'restore)
-      (ecb-modify-emacs-variable 'max-lisp-eval-depth 'restore)
-      (when (and ecb-running-xemacs
-                 (boundp 'progress-feedback-use-echo-area))
-        (ecb-modify-emacs-variable 'progress-feedback-use-echo-area 'restore))))
-      
-  
-  (if (null ecb-minor-mode)
+      (ecb-modify-emacs-variable 'max-lisp-eval-depth 'restore)))
+
+   (if (null ecb-minor-mode)
       (message "The ECB is now deactivated."))
   ecb-minor-mode)
 
@@ -1655,9 +1532,7 @@ if the minor mode is enabled.
         (ecb-activate-internal)
       (ecb-deactivate-internal)))
 
-  (if ecb-running-xemacs
-      (ecb-redraw-modeline t)
-    (force-mode-line-update t))
+  (ecb-redraw-modeline t)
 
   ecb-minor-mode)
 
@@ -1667,9 +1542,9 @@ if the minor mode is enabled.
 (defun ecb-compile-file-if-necessary (file &optional force)
   "Compile the ECB-file FILE if necessary. This is done if FORCE is not nil or
 FILE.el is newer than FILE.elc or if FILE.elc doesn't exist."
-  (let ((elc-file (concat (ecb-file-name-sans-extension file) ".elc")))
+  (let ((elc-file (concat (file-name-sans-extension file) ".elc")))
     (if (or force
-	    (not (ecb-file-exists-p elc-file))
+	    (not (file-exists-p elc-file))
 	    (file-newer-than-file-p file elc-file))
         (byte-compile-file file))))
 
@@ -1681,12 +1556,12 @@ lisp-file FILE.el which is either newer than FILE.elc or if FILE.elc doesn't
 exist."
   (interactive "P")
   (ecb-check-requirements)
-  (let ((files (ecb-directory-files (ecb-file-name-directory (locate-library "ecb"))
-                                    t)))
+  (let ((files (directory-files (file-name-directory (locate-library "ecb"))
+                                t)))
     (save-excursion
       (dolist (file files)
 	(if (save-match-data
-              (and (string-match "\\(silentcomp\\|tree-buffer\\|ecb.*\\)\\.el$" file)
+              (and (string-match "\\(tree-buffer\\|ecb.*\\)\\.el$" file)
                    (not (string-match "ecb-autoloads" file))))
             (ecb-compile-file-if-necessary file force-all))))))
 
@@ -1697,18 +1572,15 @@ exist."
 
 (add-hook 'emacs-startup-hook 'ecb-auto-activate-hook)
 
-(silentcomp-defvar menu-bar-tools-menu)
 (condition-case oops
     (progn
       (require 'easymenu)
-      (easy-menu-add-item (if ecb-running-xemacs nil menu-bar-tools-menu)
-                          (if ecb-running-xemacs '("tools") nil)
-                          (ecb-menu-item
-                           [ "Start Code Browser (ECB)"
-                             ecb-activate
-                             :active t
-                             :help "Start the Emacs Code Browser."
-                             ]))
+      (easy-menu-add-item menu-bar-tools-menu nil
+                          [ "Start Code Browser (ECB)"
+                            ecb-activate
+                            :active t
+                            :help "Start the Emacs Code Browser."
+                            ])
       )
   (error
    (ecb-warning "Not critical error during adding menu-entry to Tools-menu (error-type: %S, error-data: %S)"
@@ -1795,11 +1667,8 @@ exist."
           ecb-layout-define)
         ;; when-ecb-running-... macros
         (semantic-elisp-reuse-form-parser eval-and-compile
-                                          when-ecb-running-xemacs
                                           when-ecb-running-emacs-22
-                                          when-ecb-running-emacs-23
-                                          when-ecb-running-emacs)
-        )
+                                          when-ecb-running-emacs-23))
     (error
      (ecb-warning "Not critical error during supporting parsing the ecb-macros: (error-type: %S, error-data: %S)"
                   (car oops) (cdr oops)))))
@@ -1836,8 +1705,6 @@ exist."
                                    "ecb-do-if-buffer-visible-in-ecb-frame"
                                    "ecb-when-point-in-edit-window-ecb-windows-visible"
                                    "ecb-layout-define"
-                                   "when-ecb-running-xemacs"
-                                   "when-ecb-running-emacs"
                                    "when-ecb-running-emacs-22"
                                    "when-ecb-running-emacs-23"
                                    "ecb-exit-on-input"
@@ -1910,6 +1777,6 @@ exist."
 (ecb-file-browser-initialize)
 (ecb-method-browser-initialize)
 
-(silentcomp-provide 'ecb)
+(provide 'ecb)
 
 ;;; ecb.el ends here

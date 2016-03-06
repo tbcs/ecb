@@ -36,12 +36,7 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-util)
-
-(silentcomp-defvar ecb-tod-cursor)
 
 (defcustom ecb-tip-of-the-day t
   "*Show tip of the day at start time of ECB."
@@ -132,7 +127,7 @@
            (tip (or (ignore-errors (nth cursor ecb-tod-tip-list))
                     (nth 0 ecb-tod-tip-list))))
       ;; show tip
-      (ecb-message-box tip "Tip of the day" "Close")
+      (ecb-message-box tip "Tip of the day")
       ;; change cursor
       (ecb-tod-move-cursor cursor))))
 
@@ -144,6 +139,6 @@
                         (1+ cursor)
                       0)))))
 
-(silentcomp-provide 'ecb-tod)
+(provide 'ecb-tod)
 
 ;; ecb-tod.el ends here

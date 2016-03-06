@@ -39,9 +39,6 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-util)
 (require 'ecb-layout)
 
@@ -985,6 +982,6 @@ little more place."
 (defconst ecb-buildin-layouts (ecb-copy-list ecb-available-layouts)
   "All layouts defined until now.")
 
-(silentcomp-provide 'ecb-layout-defs)
+(provide 'ecb-layout-defs)
 
 ;;; ecb-layout-defs.el ends here

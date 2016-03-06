@@ -334,7 +334,7 @@ contains two buttons \[prior] and \[next] and mouse-2 calls
         
         ;; define mouse-2 with `ecb-examples-action-buffer-clicked'
         (define-key ecb-examples-action-buffer-keymap
-          (if ecb-running-xemacs '(button2) [down-mouse-2])
+          [down-mouse-2]
           'ecb-examples-action-buffer-clicked)
 
         ;; nop operations for the other mouse-2 operations with Emacs

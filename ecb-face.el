@@ -38,14 +38,6 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
-(silentcomp-defun set-face-parent)
-(silentcomp-defun make-face-bold)
-(silentcomp-defun make-face)
-(silentcomp-defun set-face-foreground)
-
 (defgroup ecb-face-options nil
   "Settings for all faces used in ECB."
   :group 'ecb
@@ -71,35 +63,23 @@ The parameters are set for the following display-types:
                                      FG-DARK-COL, BG-DARK-COL
 - t: HEIGHT, BOLD-P, ITALIC-P, INHERIT, FG-REST, BG-REST, REVERSE-VIDEO."
   `(list (list '((class color) (background light))
-               (append (if (and ,height (not ecb-running-xemacs)) (list :height ,height))
-                       (if ,bold-p (if (not ecb-running-xemacs)
-                                       (list :weight 'bold)
-                                     (list :bold t)))
-                       (if ,italic-p (if (not ecb-running-xemacs)
-                                         (list :slant 'italic)
-                                       (list :italic t)))
-                       (if (and ,inherit (not ecb-running-xemacs)) (list :inherit ,inherit))
+               (append (if ,height (list :height ,height))
+                       (if ,bold-p (list :weight 'bold))
+                       (if ,italic-p (list :slant 'italic))
+                       (if ,inherit (list :inherit ,inherit))
                        (if ,fg-light-col (list :foreground ,fg-light-col))
                        (if ,bg-light-col (list :background ,bg-light-col))))
          (list '((class color) (background dark))
-               (append (if (and ,height (not ecb-running-xemacs)) (list :height ,height))
-                       (if ,bold-p (if (not ecb-running-xemacs)
-                                       (list :weight 'bold)
-                                     (list :bold t)))
-                       (if ,italic-p (if (not ecb-running-xemacs)
-                                         (list :slant 'italic)
-                                       (list :italic t)))
-                       (if (and ,inherit (not ecb-running-xemacs)) (list :inherit ,inherit))
+               (append (if ,height (list :height ,height))
+                       (if ,bold-p (list :weight 'bold))
+                       (if ,italic-p (list :slant 'italic))
+                       (if ,inherit (list :inherit ,inherit))
                        (if ,fg-dark-col (list :foreground ,fg-dark-col))
                        (if ,bg-dark-col (list :background ,bg-dark-col))))
-         (list 't (append (if (and ,height (not ecb-running-xemacs)) (list :height ,height))
-                          (if ,bold-p (if (not ecb-running-xemacs)
-                                          (list :weight 'bold)
-                                        (list :bold t)))
-                          (if ,italic-p (if (not ecb-running-xemacs)
-                                            (list :slant 'italic)
-                                          (list :italic t)))
-                          (if (and ,inherit (not ecb-running-xemacs)) (list :inherit ,inherit))
+         (list 't (append (if ,height (list :height ,height))
+                          (if ,bold-p (list :weight 'bold))
+                          (if ,italic-p (list :slant 'italic))
+                          (if ,inherit (list :inherit ,inherit))
                           (if ,fg-rest (list :foreground ,fg-rest))
                           (if ,bg-rest (list :foreground ,bg-rest))
                           (if ,reverse-video-p (list :reverse-video t))))))
@@ -112,14 +92,7 @@ color etc.
 In GNU Emacs 21.X all faces \(even the face 'ecb-default-highlight-face') used
 in the ECB tree-buffers inherit from this face. Therefore the default
 attributes like font etc. of a face used in a tree-buffer can be very easily
-changed with face 'ecb-default-general-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature but the options
-`ecb-directories-general-face', `ecb-sources-general-face',
-`ecb-methods-general-face' and `ecb-history-general-face' offer the choice to
-use the face 'ecb-default-general-face' so also with XEmacs and GNU Emacs 20.X
-the basic face-settings can be easily changed just by customizing the face
-'ecb-default-general-face'!"
+changed with face 'ecb-default-general-face'."
   :group 'ecb-faces)
 
 (defface ecb-tree-guide-line-face (ecb-face-default 1.0 nil nil
@@ -225,12 +198,7 @@ Changes take first effect after finishing and reactivating ECB!"
                                                         'ecb-bucket-node-face)
   "*Face used for displaying a bucket-node in the ECB-history-buffer.
 
-In GNU Emacs 21.X this face inherits from the face 'ecb-bucket-node-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-history-buffer should be displayed with the same basic
-attributes set by 'ecb-bucket-node-face' this set of basic attributes have
-to be set in 'ecb-history-bucket-node-face' too!"
+In GNU Emacs 21.X this face inherits from the face 'ecb-bucket-node-face'."
   :group 'ecb-faces)
 
 (defcustom ecb-history-bucket-node-face 'ecb-history-bucket-node-face
@@ -253,12 +221,7 @@ Changes take first effect after finishing and reactivating ECB!"
                                                                        "DarkMagenta")
   "*Face used for displaying the source-path part in a directory-bucket.
 
-In GNU Emacs 21.X this face inherits from the face 'ecb-history-bucket-node-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-history-buffer should be displayed with the same basic
-attributes set by 'ecb-history-bucket-node-face' this set of basic attributes have
-to be set in 'ecb-history-bucket-node-dir-soure-path-face' too!"
+In GNU Emacs 21.X this face inherits from the face 'ecb-history-bucket-node-face'."
   :group 'ecb-faces)
 
 (defcustom ecb-history-bucket-node-dir-soure-path-face 'ecb-history-bucket-node-dir-soure-path-face
@@ -280,12 +243,7 @@ Changes take first effect after finishing and reactivating ECB!"
                                                             'ecb-history-general-face)
   "*Define a face for displaying indirect buffers in the history buffer.
 
-In GNU Emacs 21.X this face inherits from the face 'ecb-history-general-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-history-buffer should be displayed with the same basic
-attributes set by 'ecb-history-general-face' this set of basic attributes have
-to be set in 'ecb-history-indirect-buffer-face' too!"
+In GNU Emacs 21.X this face inherits from the face 'ecb-history-general-face'."
   :group 'ecb-faces)
  
 (defcustom ecb-history-indirect-buffer-face 'ecb-history-indirect-buffer-face
@@ -305,12 +263,7 @@ to be set in 'ecb-history-indirect-buffer-face' too!"
                                                         nil "gray60")
   "*Define a face for history entries pointing to dead buffers.
 
-In GNU Emacs 21.X this face inherits from the face 'ecb-history-general-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-history-buffer should be displayed with the same basic
-attributes set by 'ecb-history-general-face' this set of basic attributes have
-to be set in 'ecb-history-dead-buffer-face' too!"
+In GNU Emacs 21.X this face inherits from the face 'ecb-history-general-face'."
   :group 'ecb-faces)
  
 (defcustom ecb-history-dead-buffer-face 'ecb-history-dead-buffer-face
@@ -332,14 +285,7 @@ to be set in 'ecb-history-dead-buffer-face' too!"
 In GNU Emacs 21.X all highlighting faces in the ECB tree-buffers inherit from
 this face. Therefore the default attributes like font etc. of a face used in a
 tree-buffer for highlighting the current tag can be very easily changed with
-face 'ecb-default-highlight-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature but the options
-`ecb-directory-face', `ecb-source-face', `ecb-method-face' and
-`ecb-history-face' offer the choice to use the face
-'ecb-default-highlight-face' so also with XEmacs and GNU Emacs 20.X the basic
-face-settings can be easily changed just by customizing the face
-'ecb-default-highlight-face'!"
+face 'ecb-default-highlight-face'."
   :group 'ecb-faces)
 
 (defface ecb-directory-face (ecb-face-default nil nil nil
@@ -497,12 +443,7 @@ Changes take first effect after finishing and reactivating ECB!"
                                                            "brown")
   "*Face used for displaying elements of buckets in the ECB-analyse-buffer.
 
-In GNU Emacs 21.X this face inherits from the face 'ecb-default-general-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-buffers should be displayed with the same basic
-attributes set by 'ecb-default-general-face' this set of basic attributes have
-to be set in 'ecb-analyse-bucket-node-face' too!"
+In GNU Emacs 21.X this face inherits from the face 'ecb-default-general-face'."
   :group 'ecb-faces)
 
 (defcustom ecb-analyse-bucket-element-face 'ecb-analyse-bucket-element-face
@@ -522,12 +463,7 @@ Changes take first effect after finishing and reactivating ECB!"
                                                         'ecb-bucket-node-face)
   "*Face used for displaying a bucket-node in the ECB-analyse-buffer.
 
-In GNU Emacs >= 21.X this face inherits from the face 'ecb-bucket-node-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-buffers should be displayed with the same basic
-attributes set by 'ecb-bucket-node-face' this set of basic attributes have
-to be set in 'ecb-analyse-bucket-node-face' too!"
+In GNU Emacs >= 21.X this face inherits from the face 'ecb-bucket-node-face'."
   :group 'ecb-faces)
 
 (defcustom ecb-analyse-bucket-node-face 'ecb-analyse-bucket-node-face
@@ -547,12 +483,7 @@ Changes take first effect after finishing and reactivating ECB!"
                                                      'ecb-default-general-face)
   "*Define face used for the symbol itself in the symboldef-buffer.
 
-In GNU Emacs >= 21.X this face inherits from the face 'ecb-default-general-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-buffers should be displayed with the same basic
-attributes set by 'ecb-default-general-face' this set of basic attributes have
-to be set in 'ecb-analyse-bucket-node-face' too!"
+In GNU Emacs >= 21.X this face inherits from the face 'ecb-default-general-face'."
   :group 'ecb-faces)
 
 (defcustom ecb-symboldef-symbol-face 'use-font-lock-face
@@ -574,12 +505,7 @@ symbol or font-lock-variable-name-face for a variable symbol)."
                                                         'ecb-default-general-face)
   "*Define face used for the prototype of symbol in the symboldef-buffer.
 
-In GNU Emacs >= 21.X this face inherits from the face 'ecb-default-general-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-buffers should be displayed with the same basic
-attributes set by 'ecb-default-general-face' this set of basic attributes have
-to be set in 'ecb-analyse-bucket-node-face' too!"
+In GNU Emacs >= 21.X this face inherits from the face 'ecb-default-general-face'."
   :group 'ecb-faces)
 
 (defcustom ecb-symboldef-prototype-face nil
@@ -678,12 +604,8 @@ jumping to it by clicking onto a node in the methods buffer."
   :group 'ecb-faces)
 
 (defface ecb-type-tag-group-face (ecb-face-default nil t nil nil
-                                                   (if ecb-running-xemacs
-                                                       "dimgray"
-                                                     "dim gray")
-                                                   (if ecb-running-xemacs
-                                                       "dimgray"
-                                                     "dim gray"))
+                                                   "dim gray"
+                                                   "dim gray")
   "*Define face used with option `ecb-type-tag-display'."
   :group 'ecb-faces)
 
@@ -692,28 +614,11 @@ jumping to it by clicking onto a node in the methods buffer."
   "*Face used for displaying bucket-nodes in the ECB-buffers.
 See also `ecb-bucket-node-display'.
 
-In GNU Emacs 21.X this face inherits from the face 'ecb-default-general-face'.
-
-With XEmacs and GNU Emacs 20.X there is no inheritance-feature so if the
-buckets in the ECB-buffers should be displayed with the same basic
-attributes set by 'ecb-default-general-face' this set of basic attributes have
-to be set in 'ecb-bucket-node-face' too!"
+In GNU Emacs 21.X this face inherits from the face 'ecb-default-general-face'."
   :group 'ecb-faces)
 
 ;; - mode-line faces-------------------------------------------
 
-;; For XEmacs a face in the modeline should really inhertit from the face
-;; 'modeline!
-;; TODO: Klaus Berndl <klaus.berndl@sdm.de>: Currently with XEmacs 21.4.X
-;; set-face-parent MUST be before defface - therefore we have to use make-face
-;; first and then adding the values to this face we would have also added
-;; by`defface. The defface is here only used to make this face customizable!
-;; Maybe later XEmacs-versions support the parent-keyword with defface then we
-;; can change back this ugly hack.
-(when ecb-running-xemacs
-  (make-face 'ecb-mode-line-win-nr-face)
-  (set-face-parent 'ecb-mode-line-win-nr-face 'modeline nil '(default))
-  (make-face-bold 'ecb-mode-line-win-nr-face))
 (defface ecb-mode-line-win-nr-face (ecb-face-default nil t)
   "*Define face for the window-number in the mode-line.
 See `ecb-mode-line-display-window-number'."
@@ -721,17 +626,11 @@ See `ecb-mode-line-display-window-number'."
 
 (defcustom ecb-mode-line-win-nr-face 'ecb-mode-line-win-nr-face
   "*Face used for the window-number in the mode-line.
-See `ecb-mode-line-display-window-number'. For XEmacs the face should inherit
-from the face 'modeline \(see `set-face-parent')!"
+See `ecb-mode-line-display-window-number'."
   :group 'ecb-mode-line
   :group 'ecb-face-options
   :type 'face)
 
-(when ecb-running-xemacs
-  (make-face 'ecb-mode-line-prefix-face)
-  (set-face-parent 'ecb-mode-line-prefix-face 'modeline nil '(default))
-  (set-face-foreground 'ecb-mode-line-prefix-face "forestgreen"))
-;;                        nil '(default color win)))
 (defface ecb-mode-line-prefix-face (ecb-face-default nil nil nil nil
                                                      "forestgreen"
                                                      "forestgreen")
@@ -741,15 +640,11 @@ See `ecb-mode-line-prefixes'."
 
 (defcustom ecb-mode-line-prefix-face 'ecb-mode-line-prefix-face
   "*Face used for the prefix in the mode-line.
-See `ecb-mode-line-prefixes'. For XEmacs the face should inherit from the face
-'modeline \(see `set-face-parent')!"
+See `ecb-mode-line-prefixes'."
   :group 'ecb-mode-line
   :group 'ecb-face-options
   :type 'face)
 
-(when ecb-running-xemacs
-  (make-face 'ecb-mode-line-data-face)
-  (set-face-parent 'ecb-mode-line-data-face 'modeline nil '(default)))
 (defface ecb-mode-line-data-face (ecb-face-default)
   "*Define face for the data in the mode-line.
 See `ecb-mode-line-data'."
@@ -757,12 +652,11 @@ See `ecb-mode-line-data'."
 
 (defcustom ecb-mode-line-data-face 'ecb-mode-line-data-face
   "*Face used for the data in the mode-line.
-See `ecb-mode-line-data'. For XEmacs the face should inherit from the face
-'modeline \(see `set-face-parent')!"
+See `ecb-mode-line-data'."
   :group 'ecb-mode-line
   :group 'ecb-face-options
   :type 'face)
 
-(silentcomp-provide 'ecb-face)
+(provide 'ecb-face)
 
 ;;; ecb-face.el ends here

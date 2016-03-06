@@ -41,57 +41,7 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (eval-when-compile (require 'cl))
-
-;;; ----- Silentcomp-Defs ----------------------------------
-
-;; XEmacs
-(silentcomp-defun symbol-value-in-buffer)
-(silentcomp-defun button-release-event-p)
-(silentcomp-defun button-press-event-p)
-(silentcomp-defun event-key)
-(silentcomp-defun frame-property)
-(silentcomp-defun point-at-bol)
-(silentcomp-defun point-at-eol)
-(silentcomp-defun frame-parameter)
-(silentcomp-defun line-beginning-position)
-(silentcomp-defun line-end-position)
-(silentcomp-defun window-pixel-edges)
-(silentcomp-defun noninteractive)
-;; Emacs
-(silentcomp-defun event-basic-type)
-(silentcomp-defun window-edges)
-(silentcomp-defun buffer-local-value)
-(silentcomp-defun posn-point)
-(silentcomp-defun posn-window)
-(silentcomp-defun event-start)
-(silentcomp-defun set-window-vscroll)
-;; XEmacs
-(silentcomp-defun make-dialog-box)
-(silentcomp-defun display-message)
-(silentcomp-defun clear-message)
-(silentcomp-defun make-event)
-;; Emacs
-(silentcomp-defvar message-log-max)
-(silentcomp-defvar message-truncate-lines)
-(silentcomp-defun x-popup-dialog)
-(silentcomp-defun display-images-p)
-(silentcomp-defvar tar-subfile-mode)
-(silentcomp-defvar archive-subfile-mode)
-(silentcomp-defun count-screen-lines)
-(silentcomp-defvar header-line-format)
-
-;; timer stuff for Xemacs
-(silentcomp-defun delete-itimer)
-(silentcomp-defun start-itimer)
-;; thing stuff for XEmacs
-(silentcomp-defun thing-boundaries)
-(silentcomp-defun thing-symbol)
-
-(silentcomp-defun custom-file)
 
 ;;; ----- Some constants -----------------------------------
 
@@ -126,14 +76,6 @@
       (expand-file-name (file-name-directory (locate-library "semantic")))))
 
 (defconst ecb-ecb-parent-dir (expand-file-name (concat ecb-ecb-dir "../")))
-
-;; we assume that current loaded ECB is a regular XEmacs-package if and only
-;; if `ecb-ecb-dir' contains the files "_pkg.el" and "auto-autoloads.el" and
-;; we are running XEmacs
-(defconst ecb-regular-xemacs-package-p
-  (and ecb-running-xemacs
-       (file-exists-p (expand-file-name (concat ecb-ecb-dir "_pkg.el")))
-       (file-exists-p (expand-file-name (concat ecb-ecb-dir "auto-autoloads.el")))))
 
 ;; image support possible with current Emacs setup?
 ;; This will first checked at activation-time of ECB because otherwise usage
@@ -193,176 +135,67 @@ semantic!. If not use the form \(when ecb-running-gnu-emacs-version-23)."
   `(when ecb-running-gnu-emacs-version-23
      ,@body))
 
-;; I do not want all this compatibitly stuff being parsed by semantic,
-;; therefore i do not use the macro `when-ecb-running-xemacs'!
-
-(when ecb-running-xemacs
-  (defun ecb-event-to-key (event)
-    (typecase event
-      (button-release-event 'mouse-release)
-      (button-press-event 'mouse-press)
-      (otherwise
-       ;; the ignore-errors is a little hack because i don't know all
-       ;; events of XEmacs so sometimes event-key produces a
-       ;; wrong-type-argument error.
-       (ignore-errors (event-key event)))))
-  (defun ecb-facep (face)
-    (memq face (face-list)))
-  (defun ecb-noninteractive ()
-    "Return non-nil if running non-interactively, i.e. in batch mode."
-    (noninteractive))
-  (defun ecb-subst-char-in-string (fromchar tochar string &optional inplace)
-    "Replace FROMCHAR with TOCHAR in STRING each time it occurs.
-Unless optional argument INPLACE is non-nil, return a new string."
-    (let ((i (length string))
-          (newstr (if inplace string (copy-sequence string))))
-      (while (> i 0)
-        (setq i (1- i))
-        (if (eq (aref newstr i) fromchar)
-            (aset newstr i tochar)))
-      newstr))
-  (defun ecb-substring-no-properties (string &optional start end)
-    (let* ((start (or start 0))
-           (end (or end (length string)))
-           (string (substring string start end)))
-      (set-text-properties start end nil string)
-      string))
-    
-  (defun ecb-derived-mode-p (&rest modes)
-    "Non-nil if the current major mode is derived from one of MODES.
-Uses the `derived-mode-parent' property of the symbol to trace backwards."
-    (let ((parent major-mode))
-      (while (and (not (memq parent modes))
-                  (setq parent (get parent 'derived-mode-parent))))
-      parent))
-  (defsubst ecb-count-screen-lines (&optional beg end)
-    (let ((b (or beg (point-min)))
-          (e (or end (point-max))))
-      (count-lines b e)))
-  (defalias 'ecb-frame-parameter 'frame-property)
-  (defalias 'ecb-line-beginning-pos 'point-at-bol)
-  (defalias 'ecb-bolp 'bolp)
-  (defalias 'ecb-eolp 'eolp)
-  (defalias 'ecb-bobp 'bobp)
-  (defalias 'ecb-eobp 'eobp)
-  (defalias 'ecb-line-end-pos 'point-at-eol)
-  (defalias 'ecb-event-window 'event-window)
-  (defalias 'ecb-event-point 'event-point)
-  (defalias 'ecb-event-buffer 'event-buffer)
-  (defalias 'ecb-window-full-width 'window-full-width)
-  (defalias 'ecb-window-full-height 'window-height)
-  (defalias 'ecb-window-display-height 'window-displayed-height)
-  (defun ecb-frame-char-width (&optional frame)
-    (/ (frame-pixel-width frame) (frame-width frame)))
-  (defun ecb-frame-char-height (&optional frame)
-    (/ (frame-pixel-height frame) (frame-height frame)))
-  (defun ecb-window-edges (&optional window)
-    (let ((pix-edges (window-pixel-edges window)))
-      (list (/ (nth 0 pix-edges) (ecb-frame-char-width))
-            (/ (nth 1 pix-edges) (ecb-frame-char-height))
-            (/ (nth 2 pix-edges) (ecb-frame-char-width))
-            (/ (nth 3 pix-edges) (ecb-frame-char-height))))))
-
-(unless ecb-running-xemacs
-  (defun ecb-event-to-key (event)
-    (let ((type (event-basic-type event)))
-      (case type
-        ((mouse-1 mouse-2 mouse-3) 'mouse-release)
-        ((down-mouse-1 down-mouse-2 down-mouse-3) 'mouse-press)
-        (otherwise (event-basic-type event)))))
-  (defalias 'ecb-facep 'facep)
-  (defun ecb-noninteractive ()
-    "Return non-nil if running non-interactively, i.e. in batch mode."
-    noninteractive)
-  (defalias 'ecb-subst-char-in-string 'subst-char-in-string)
-  (defalias 'ecb-substring-no-properties 'substring-no-properties)
-  (defalias 'ecb-derived-mode-p 'derived-mode-p)
-  (defsubst ecb-count-screen-lines (&optional beg end)
-    (count-screen-lines beg end))
-  (defalias 'ecb-frame-parameter 'frame-parameter)
-  (defalias 'ecb-line-beginning-pos 'line-beginning-position)
-  (defalias 'ecb-line-end-pos 'line-end-position)
-  (defalias 'ecb-bolp 'bolp)
-  (defalias 'ecb-eolp 'eolp)
-  (defalias 'ecb-bobp 'bobp)
-  (defalias 'ecb-eobp 'eobp)
-  (defun ecb-event-window (event)
-    (posn-window (event-start event)))
-  (defun ecb-event-point (event)
-    (posn-point (event-start event)))
-  (defun ecb-event-buffer (event)
-    (window-buffer (ecb-event-window event)))
-  (defun ecb-window-full-width (&optional window)
-    (let ((edges (window-edges window)))
-      (- (nth 2 edges) (nth 0 edges))))
-  (defalias 'ecb-window-display-height 'window-text-height)
-  (defalias 'ecb-window-full-height 'window-height)
-  (defalias 'ecb-frame-char-width 'frame-char-width)
-  (defalias 'ecb-frame-char-height 'frame-char-height)
-  (defalias 'ecb-window-edges 'window-edges))
+(defun ecb-event-to-key (event)
+  (let ((type (event-basic-type event)))
+    (case type
+      ((mouse-1 mouse-2 mouse-3) 'mouse-release)
+      ((down-mouse-1 down-mouse-2 down-mouse-3) 'mouse-press)
+      (otherwise (event-basic-type event)))))
+(defalias 'ecb-facep 'facep)
+(defun ecb-noninteractive ()
+  "Return non-nil if running non-interactively, i.e. in batch mode."
+  noninteractive)
+(defalias 'ecb-subst-char-in-string 'subst-char-in-string)
+(defalias 'ecb-substring-no-properties 'substring-no-properties)
+(defalias 'ecb-derived-mode-p 'derived-mode-p)
+(defsubst ecb-count-screen-lines (&optional beg end)
+  (count-screen-lines beg end))
+(defalias 'ecb-frame-parameter 'frame-parameter)
+(defalias 'ecb-line-beginning-pos 'line-beginning-position)
+(defalias 'ecb-line-end-pos 'line-end-position)
+(defalias 'ecb-bolp 'bolp)
+(defalias 'ecb-eolp 'eolp)
+(defalias 'ecb-bobp 'bobp)
+(defalias 'ecb-eobp 'eobp)
+(defun ecb-event-window (event)
+  (posn-window (event-start event)))
+(defun ecb-event-point (event)
+  (posn-point (event-start event)))
+(defun ecb-event-buffer (event)
+  (window-buffer (ecb-event-window event)))
+(defun ecb-window-full-width (&optional window)
+  (let ((edges (window-edges window)))
+    (- (nth 2 edges) (nth 0 edges))))
+(defalias 'ecb-window-display-height 'window-text-height)
+(defalias 'ecb-window-full-height 'window-height)
+(defalias 'ecb-frame-char-width 'frame-char-width)
+(defalias 'ecb-frame-char-height 'frame-char-height)
+(defalias 'ecb-window-edges 'window-edges)
 
 ;; thing at point stuff
 
-(if (not ecb-running-xemacs)
-    (progn
-      (require 'thingatpt)
-      (defalias 'ecb-thing-at-point 'thing-at-point)
-      (defalias 'ecb-end-of-thing 'end-of-thing)
-      (defalias 'ecb-beginning-of-thing 'beginning-of-thing))
-  ;; Xemacs
-  (require 'thing)
-  (defun ecb-thing-at-point (thing)
-    (let ((bounds (if (eq 'symbol thing)
-                      (thing-symbol (point))
-                    (thing-boundaries (point)))))
-      (buffer-substring (car bounds) (cdr bounds))))
-  (defun ecb-end-of-thing (thing)
-    (goto-char (cdr (if (eq 'symbol thing)
-                        (thing-symbol (point))
-                      (thing-boundaries (point))))))
-  (defun ecb-beginning-of-thing (thing)
-    (goto-char (car (if (eq 'symbol thing)
-                        (thing-symbol (point))
-                      (thing-boundaries (point)))))))
+(require 'thingatpt)
+(defalias 'ecb-thing-at-point 'thing-at-point)
+(defalias 'ecb-end-of-thing 'end-of-thing)
+(defalias 'ecb-beginning-of-thing 'beginning-of-thing)
+
 
 ;; overlay- and extend-stuff
 
-(if (not ecb-running-xemacs)
-    (progn
-      (defalias 'ecb-make-overlay            'make-overlay)
-      (defalias 'ecb-overlay-p               'overlayp)
-      (defalias 'ecb-overlay-put             'overlay-put)
-      (defalias 'ecb-overlay-get             'overlay-get)
-      (defalias 'ecb-overlay-move            'move-overlay)
-      (defalias 'ecb-overlay-delete          'delete-overlay)
-      (defalias 'ecb-overlay-kill            'delete-overlay))
-  ;; XEmacs
-  (defalias 'ecb-make-overlay            'make-extent)
-  (defalias 'ecb-overlay-p               'extentp)
-  (defalias 'ecb-overlay-put             'set-extent-property)
-  (defalias 'ecb-overlay-get             'extent-property)
-  (defalias 'ecb-overlay-move            'set-extent-endpoints)
-  (defalias 'ecb-overlay-delete          'detach-extent)
-  (defalias 'ecb-overlay-kill            'delete-extent))
+(defalias 'ecb-make-overlay            'make-overlay)
+(defalias 'ecb-overlay-p               'overlayp)
+(defalias 'ecb-overlay-put             'overlay-put)
+(defalias 'ecb-overlay-get             'overlay-get)
+(defalias 'ecb-overlay-move            'move-overlay)
+(defalias 'ecb-overlay-delete          'delete-overlay)
+(defalias 'ecb-overlay-kill            'delete-overlay)
+
 
 ;; timer stuff
 
-(if (not ecb-running-xemacs)
-    (progn
-      (defalias 'ecb-run-with-timer 'run-with-timer)
-      (defalias 'ecb-run-with-idle-timer 'run-with-idle-timer)
-      (defalias 'ecb-cancel-timer 'cancel-timer))
-  ;; XEmacs
-  (defun ecb-run-with-timer (secs repeat function &rest args)
-    (start-itimer "ecb-timer" function secs repeat
-                  nil (if args t nil) args))
-  (defun ecb-run-with-idle-timer (secs repeat function &rest args)
-    (start-itimer "ecb-idle-timer"
-                  function secs (if repeat secs nil)
-                  t (if args t nil) args))
-  (defun ecb-cancel-timer (timer)
-    (delete-itimer timer))
-  )
+(defalias 'ecb-run-with-timer 'run-with-timer)
+(defalias 'ecb-run-with-idle-timer 'run-with-idle-timer)
+(defalias 'ecb-cancel-timer 'cancel-timer)
 
 
 ;;; ----- Customize stuff ----------------------------------
@@ -372,10 +205,8 @@ Uses the `derived-mode-parent' property of the symbol to trace backwards."
 customize-options. If no custom-file can be computed or if Emacs reports an
 error \(e.g. GNU Emacs complains when calling `custom-file' and Emacs has been
 started with -q) nil is returned."
-  (if ecb-running-xemacs
-      custom-file
-    (require 'cus-edit)
-    (ignore-errors (custom-file))))
+  (require 'cus-edit)
+  (ignore-errors (custom-file)))
 
 (defun ecb-option-get-value (option &optional type)
   "Return the value of a customizable ECB-option OPTION with TYPE, where TYPE
@@ -1297,30 +1128,16 @@ INIT-VALUE can be either a number or a string-representation of a number."
 (defun ecb-message-box (message-str &optional title-text button-text)
   "Display a message-box with message MESSAGE-STR and title TITLE-TEXT if
 TITLE-TEXT is not nil - otherwise \"Message-box\" is used as title. The title
-gets always the prefix \"ECB - \". Second optional argument BUTTON-TEXT
-specifies the text of the message-box button; if nil then \"OK\" is used.
-
-Remark: BUTTON-TEXT is currently only used with XEmacs. With GNU Emacs the
-message itself is the button because GNU Emacs currently does not support
-dialog-boxes very well.
+gets always the prefix \"ECB - \".
 
 If `window-system' is nil then a simple message is displayed in the echo-area."
-  (let ((button (if (stringp button-text)
-                    button-text
-                  "OK"))
-        (title (concat "ECB"
+  (let ((title (concat "ECB"
                        (if (stringp title-text)
                            (concat " - " title-text)
                          " Message"))))
     (if window-system
         (progn
-          (if ecb-running-xemacs
-              (make-dialog-box 'question
-                               :title title
-                               :modal t
-                               :question message-str
-                               :buttons (list (vector button '(identity nil) t)))
-            (x-popup-dialog t (list title (cons message-str t))))
+          (x-popup-dialog t (list title (cons message-str t)))
           t)
       (message (concat title " " message-str)))))
 
@@ -1432,17 +1249,11 @@ If `window-system' is nil then a simple message is displayed in the echo-area."
                    (t
                     (apply 'format args)))))
     ;; Now message is either nil or the formated string.
-    (if ecb-running-xemacs
-        ;; XEmacs way of preventing log messages.
-        (if msg
-            (display-message 'no-log msg)
-          (clear-message 'no-log))
-      ;; Emacs way of preventing log messages.
-      (let ((message-log-max nil)
-            (message-truncate-lines nil))
-        (if msg
-            (message "%s" msg)
-          (message nil))))
+    (let ((message-log-max nil)
+          (message-truncate-lines nil))
+      (if msg
+          (message "%s" msg)
+        (message nil)))
     msg))
 
 (defun ecb-error (&rest args)
@@ -1473,47 +1284,24 @@ buffer-part or TEXT which are not set by FACE are preserved.
 If always returns TEXT \(if not nil then modified with FACE)."
   (if (null face)
       text
-    (if ecb-running-xemacs
-        (put-text-property start end 'face
-                           (let* ((current-face (get-text-property 0
-                                                                   'face
-                                                                   text))
-                                  (cf
-                                   (typecase current-face
-                                     (ecb-face (list current-face))
-                                     (list current-face)
-                                     (otherwise nil)))
-                                  (nf
-                                   (typecase face
-                                     (ecb-face (list face))
-                                     (list face)
-                                     (otherwise nil))))
+    (alter-text-property start end 'face
+                         (lambda (current-face)
+                           (let ((cf
+                                  (typecase current-face
+                                    (ecb-face (list current-face))
+                                    (list current-face)
+                                    (otherwise nil)))
+                                 (nf
+                                  (typecase face
+                                    (ecb-face (list face))
+                                    (list face)
+                                    (otherwise nil))))
                              ;; we must add the new-face in front of
                              ;; current-face to get the right merge!
                              (if (member face cf)
                                  cf
-                               (append nf cf)
-                               )
-                             )
-                           text)
-      (alter-text-property start end 'face
-                           (lambda (current-face)
-                             (let ((cf
-                                    (typecase current-face
-                                      (ecb-face (list current-face))
-                                      (list current-face)
-                                      (otherwise nil)))
-                                   (nf
-                                    (typecase face
-                                      (ecb-face (list face))
-                                      (list face)
-                                      (otherwise nil))))
-                               ;; we must add the new-face in front of
-                               ;; current-face to get the right merge!
-                               (if (member face cf)
-                                   cf
-                                 (append nf cf))))
-                           text))
+                               (append nf cf))))
+                         text)
     text))
 
 (defun ecb-merge-face-into-text (text face)
@@ -1862,15 +1650,8 @@ If a window then the buffer curently displayed in this window is returned."
 (defun ecb-buffer-local-value (sym buffer)
   "Get the buffer-local value of variable SYM in BUFFER. If there is no
 buffer-local value in BUFFER then the global value of SYM is used."
-  (if (fboundp 'buffer-local-value)
-      (buffer-local-value sym buffer)
-    (when ecb-running-xemacs
-      (symbol-value-in-buffer sym buffer))))
-;;     (or (cdr (assoc sym (buffer-local-variables buffer)))
-;;         (save-excursion
-;;           (set-buffer buffer)
-;;           (symbol-value sym)))))
-
+  (when (fboundp 'buffer-local-value)
+    (buffer-local-value sym buffer)))
 
 (defun ecb-file-content-as-string (file)
   "If FILE exists and is readable returns the contents as a string otherwise
@@ -1914,8 +1695,7 @@ See `ecb-current-buffer-archive-extract-p'. FILENAME is either a filename or
 nil whereas in the latter case the current-buffer is assumed."
   (let* ((file (or filename (ecb-buffer-file-name (current-buffer)))))
     (or (and file (file-readable-p file))
-        (and (not ecb-running-xemacs)
-             (if filename
+        (and (if filename
                  (with-current-buffer (find-file-noselect filename)
                    (ecb-current-buffer-archive-extract-p))
                (ecb-current-buffer-archive-extract-p))))))
@@ -1936,55 +1716,12 @@ of `next-window'. If omitted, WINDOW defaults to the selected window. FRAME and
 WINDOW default to the selected ones. Optional second arg MINIBUF t means count
 the minibuffer window even if not active. If MINIBUF is neither t nor nil it
 means not to count the minibuffer even if it is active."
-  ;; At least under XEmacs 21.5 there's a problem with the advice on
-  ;; current-window-configuration -- that advice calls
-  ;; ecb-window-configuration-data, which in turn involves ecb-windows-list,
-  ;; which uses save-windows-excursion, which in 21.5-b28 is. . . a macro
-  ;; which uses current-window-configuration!
-  ;; To avoid this we run the body of this function with deactivated basic
-  ;; advices of ecb.
-   (if (not ecb-running-xemacs)
-       ;; Klaus Berndl <klaus.berndl@sdm.de>: There seems to be mysterious
-       ;; behavior when running our own window-list version with GNU Emacs >=
-       ;; 21.3 - especially when running an igrep when the igrep-buffer is
-       ;; already in another window. We can here savely use the function
-       ;; `window-list' because it returns an ordered list
-       (window-list frame minibuf window)
-     ;; TODO: Klaus Berndl <klaus.berndl@sdm.de>: the following is needed for
-     ;; XEmacs - but the best would be if we would not need
-     ;; implementing window-list, means the best would be if window-list
-     ;; returns an ordered list!
-     (ecb-with-original-basic-functions
-      (setq window (or window (selected-window))
-            frame (or frame (selected-frame)))
-      (if (not (eq (window-frame window) frame))
-          (error "Window must be on frame."))
-      (let ((current-frame (selected-frame))
-            (current-window (selected-window))
-            (current-buf (current-buffer))
-            (current-point (point))
-            list)
-        (unwind-protect
-            (progn ;;save-window-excursion
-              (select-frame frame)
-              ;; this is needed for correct start-point
-              (select-window window)
-              (walk-windows
-               (function (lambda (cur-window)
-                           (if (not (eq window cur-window))
-                               (setq list (cons cur-window list)))))
-               minibuf
-               'selected)
-              ;; This is needed to get the right canonical windows-order, i.e. the
-              ;; same order of windows than `walk-windows' walks through!
-              (setq list (nreverse list))
-              (setq list (cons window list)))
-          (select-frame current-frame)
-          (select-window current-window)
-          (set-buffer current-buf)
-          ;; we must reset the point of the buffer which was current at call-time
-          ;; of this function
-          (goto-char current-point))))))
+  ;; Klaus Berndl <klaus.berndl@sdm.de>: There seems to be mysterious
+  ;; behavior when running our own window-list version with GNU Emacs >=
+  ;; 21.3 - especially when running an igrep when the igrep-buffer is
+  ;; already in another window. We can here savely use the function
+  ;; `window-list' because it returns an ordered list
+  (window-list frame minibuf window))
 
 (defun ecb-canonical-windows-list ()
   "Return a list of all current visible windows in the `ecb-frame' \(starting
@@ -2068,9 +1805,7 @@ header-line."
 			mode-line-format)
 		   1 0)
 	       ;; Count the header-line, if any
-               (if ecb-running-xemacs
-                   0
-                 (if header-line-format 1 0)))))
+               (if header-line-format 1 0))))
 	 (delta
 	  ;; Calculate how much the window height has to change to show
 	  ;; desired-height lines, constrained by MIN-HEIGHT and MAX-HEIGHT.
@@ -2111,8 +1846,7 @@ header-line."
 		       ;; the edge of the window.
 		       (forward-line 0))
 		     (point)))))
-        (unless ecb-running-xemacs
-          (set-window-vscroll window 0))
+        (set-window-vscroll window 0)
 	(while (and (< desired-height max-height-norm)
 		    (= desired-height (window-height window))
 		    (not (pos-visible-in-window-p end window)))
@@ -2348,11 +2082,9 @@ cons-cell \('test-inner-loop . \"test\")"
 
 ;; interactive-p is obsolete as of Gnu Emacs 23.2
 (defmacro ecb-interactive-p (&optional kind)
-  (if (or (> emacs-major-version 23)
-	  (and (>= emacs-major-version 23)
-	       (>= emacs-minor-version 2)))
-      `(called-interactively-p ,kind)
-    `(interactive-p)))
+  (if (version< emacs-version "23.2")
+      `(interactive-p)
+    `(called-interactively-p ,kind)))
 
 ;; labels & flet is obsolete as of Gnu Emacs 24.3, so we use them but provide
 ;; compatibility with older versions
@@ -2361,15 +2093,13 @@ cons-cell \('test-inner-loop . \"test\")"
 
 ;; redraw-modeline is an obsolete function as of Gnu Emacs 24.3
 (defmacro ecb-redraw-modeline (&optional kind)
-  (if (or (> emacs-major-version 24)
-	  (and (>= emacs-major-version 24)
-	       (>= emacs-minor-version 3)))
-      `(force-mode-line-update ,kind)
-    `(redraw-modeline)))
+  (if (version< emacs-version "24.3")
+      `(redraw-modeline)
+    `(force-mode-line-update ,kind)))
 
 ;;; ----- Provide ------------------------------------------
 
-(silentcomp-provide 'ecb-util)
+(provide 'ecb-util)
 
 ;;; Local Variables: ***
 ;;; mode:outline-minor ***

@@ -32,9 +32,6 @@
 (require 'ecb-cedet-wrapper)
 (require 'ecb-util)
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (defun ecb-semanticdb-find-result-nth-with-file (result n)
   "In RESULT, return the Nth search result.
 This is a 0 based search result, with the first match being element 0. Returns
@@ -137,6 +134,6 @@ it)."
     (when scope
       (ecb--semantic-analyze-find-tag tag-name tag-class scope))))
 
-(silentcomp-provide 'ecb-semantic)
+(provide 'ecb-semantic)
 
 ;;; ecb-semantic.el end here

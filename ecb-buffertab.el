@@ -45,9 +45,6 @@
 ;;   - is this possible?  I think it might but I would need to set it up
 ;;   correctly.
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-compilation)
 
 (with-no-warnings
@@ -115,6 +112,6 @@
 				   'local-map 'ecb-buffertab-map)
 			     header-line-format)))))
 
-(silentcomp-provide 'ecb-buffertab)
+(provide 'ecb-buffertab)
 
 ;;; ecb-buffertab.el ends here

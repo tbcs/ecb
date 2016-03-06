@@ -37,10 +37,6 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'silentcomp))
-
-
 (require 'ecb-util)
 
 (require 'tree-buffer)
@@ -50,8 +46,6 @@
 (eval-when-compile
   ;; to avoid compiler grips
   (require 'cl))
-
-(silentcomp-defvar modeline-map)
 
 (defgroup ecb-tree-buffer nil
   "General settings related to the tree-buffers of ECB."
@@ -260,10 +254,7 @@ With both ascii-styles the tree-layout can be affected with the options
 ;; additonal images are necessary - but currently i don't think we need
 ;; special images for this analyse-stuff.
 (defcustom ecb-tree-image-icons-directories
-  (let ((base (concat (if ecb-regular-xemacs-package-p
-                          (format "%s" (locate-data-directory "ecb"))
-                        ecb-ecb-dir)
-                      "ecb-images/")))
+  (let ((base (concat ecb-ecb-dir "ecb-images/")))
     (cons (concat base "default/height-17")
           (mapcar (function (lambda (i)
                               (cons (car i) (concat base (cdr i)))))
@@ -365,9 +356,7 @@ no parent then just the next node above is displayed in the header-line. The
 node displayed in the header-line is exactly in the same manner clickable as
 all other nodes.
 
-See also `ecb-tree-stickynode-indent-string'.
-
-This feature is only available with Gnu Emacs, not with XEmacs."
+See also `ecb-tree-stickynode-indent-string'."
   :group 'ecb-tree-buffer
   :group 'ecb-most-important
   :type 'boolean)
@@ -1351,11 +1340,7 @@ Currently there are the following subcaches managed within this cache:
 
 ;; directory separator
 
-(defconst ecb-directory-sep-char
-  (if ecb-running-xemacs
-      ;; to avoid compiler complainings
-      (symbol-value 'directory-sep-char)
-    ?/))
+(defconst ecb-directory-sep-char ?/)
 
 (defsubst ecb-directory-sep-char (&optional refdir)
   (if (or (null refdir)
@@ -1615,53 +1600,7 @@ function reads them to these hooks."
 
 ;; -- end of sync stuff
 
-
-
-;;; ----- Wrappers for file- and directory-operations ------
-
-(dolist (f '(file-name-nondirectory
-             file-exists-p
-             file-name-directory
-             file-readable-p
-             file-attributes
-             file-name-extension
-             file-directory-p
-             file-accessible-directory-p
-             file-name-sans-extension
-             file-writable-p
-             file-name-as-directory))
-  (fset (intern (format "ecb-%s" f))
-        `(lambda (file-or-dir-name &rest args)
-           ,(format "Delegate all args to `%s' but call first `ecb-fix-path' for FILE-OR-DIR-NAME." f)
-           (apply (quote ,f) (ecb-fix-path file-or-dir-name) args))))
-
-(defun ecb-directory-files (dir &rest args)
-  "Wrapper for directory-files that fixes the file name & catch file errors"
-  (condition-case nil
-      (apply 'directory-files (ecb-fix-path dir) args)
-    (error nil)))
-
-(defun ecb-expand-file-name (name &optional default-dir)
-  "Delegate all args to `expand-file-name' but call first `ecb-fix-path'
-for both args."
-  (expand-file-name (ecb-fix-path name) (ecb-fix-path default-dir)))
-
 ;;; ----- Canonical filenames ------------------------------
-
-(defun ecb-fix-path (path)
-  "Fixes an annoying behavior of the native windows-version of XEmacs:
-When PATH contains only a drive-letter and a : then `expand-file-name' does
-not interpret this PATH as root of that drive. So we add a trailing
-`directory-sep-char' and return this new path because then `expand-file-name'
-treats this as root-dir of that drive. For all \(X)Emacs-version besides the
-native-windows-XEmacs PATH is returned."
-  (if (and ecb-running-xemacs
-           (equal system-type 'windows-nt))
-      (if (and (= (length path) 2)
-               (equal (aref path 1) ?:))
-          (concat path (ecb-directory-sep-string))
-        path)
-    path))
 
 ;; accessors for the FIXED-FILENAMES-cache
 
@@ -1690,9 +1629,8 @@ cache-entries are not dumped. This command is not intended for end-users of ECB.
                                  no-nil-value))
 
 ;; TODO: Klaus Berndl <klaus.berndl@sdm.de>: What about the new cygwin-version
-;; of GNU Emacs 21? We have to test if this function and all locations where
-;; `ecb-fix-path' is used work correctly with the cygwin-port of GNU Emacs.
-(silentcomp-defun mswindows-cygwin-to-win32-path)
+;; of GNU Emacs 21? We have to test if this function works correctly with the
+;; cygwin-port of GNU Emacs.
 (defun ecb-fix-filename (path &optional filename substitute-env-vars)
   "Normalizes path- and filenames for ECB. If FILENAME is not nil its pure
 filename \(i.e. without directory part) will be concatenated to PATH. The
@@ -1707,16 +1645,7 @@ not nil then in both PATH and FILENAME env-var substitution is done. If the
           (if (or (not remote-path)
                   (ecb-host-accessible-p (nth 1 remote-path)))
               (progn
-                (setq norm-path (if ecb-running-xemacs
-                                    (case system-type
-                                      (cygwin32
-                                       (mswindows-cygwin-to-win32-path
-                                        (expand-file-name path)))
-                                      (windows-nt
-                                       (expand-file-name (ecb-fix-path path)))
-                                      (otherwise
-                                       (expand-file-name path)))
-                                  (expand-file-name path)))
+                (setq norm-path (expand-file-name path))
                 ;; substitute environment-variables
                 (setq norm-path (expand-file-name (if substitute-env-vars
                                                       (substitute-in-file-name norm-path)
@@ -1813,16 +1742,8 @@ See also the option `ecb-tree-do-not-leave-window-after-select'."
   "Things which should be performed after creating a tree-buffer.
 The tree-buffer is the current buffer."
   (local-set-key (kbd "C-t") 'ecb-toggle-do-not-leave-window-after-select)
-  (if ecb-running-xemacs
-      ;; TODO: Klaus Berndl <klaus.berndl@sdm.de>: Is it necessary to make
-      ;; modeline-map buffer-local for current buffer first?!
-      (define-key modeline-map
-        '(button2up)
-        'ecb-toggle-maximize-ecb-window-with-mouse)
-    (local-set-key [mode-line mouse-2]
-                   'ecb-toggle-maximize-ecb-window-with-mouse)))
-  
- 
+  (local-set-key [mode-line mouse-2]
+                 'ecb-toggle-maximize-ecb-window-with-mouse))
 
 
 ;;====================================================
@@ -2135,6 +2056,6 @@ value."
     ret))
 
 
-(silentcomp-provide 'ecb-common-browser)
+(provide 'ecb-common-browser)
 
 ;;; ecb-common-browser.el ends here

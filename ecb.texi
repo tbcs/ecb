@@ -1411,34 +1411,6 @@ want to change the images then you normally have nothing to do because
 the default value of @code{ecb-tree-image-icons-directories} points
 already to the correct image-directories.
 
-A special remark for XEmacs:
-
-At least XEmacs 21.14 (but probably previous versions too) has a bug
-in its display-engine which prevents adjacent images to be displayed
-correctly. The effect is, that in a row of two or more adjacent images
-(e.g. end-guide+handle+open - see the tree-example above) always all
-images are masked by the last one, means only the last one is visible.
-If at least one normal character (e.g. a space) is placed between two
-images then the images are displayed correctly. Therefore ECB has
-implemented the following work-around to get best possible results
-with XEmacs: open-, close-, empty-, leaf-, guide-, end-guide- and
-no-guide-images are displayed with images and the handle- and the
-no-handle-images are displayed with the corresponding ascii-symbols
-(which is ``-'' rsp. `` ''). The face (the color) of the handle-symbol
-is customizable via the option @code{ecb-tree-guide-line-face}.
-
-This bug is already reported to the XEmacs-team. If your XEmacs has
-fixed this bug then add the following to your @file{.emacs}-file (or
-whereever your emacs-setup is located):
-
-@lisp
-(setq tree-buffer-enable-xemacs-image-bug-hack nil)
-@end lisp
-
-Then ECB uses images without any special work-around with XEmacs too.
-Just try it - if the tree-buffers look ugly then the XEmacs-bug is
-probably not fixed correctly.
-
 @node Images for Methods-buffer, ,Tree-buffers with images, Tree-buffer styles
 @subsubsection Special images for the Methods-buffer
 
@@ -13632,7 +13604,7 @@ This key is bound to the command
 @code{tree-buffer-show-node-menu-keyboard}: Activates the popup-menu
 of current tree-buffer for current node-type via keyboard. If called
 with a prefix-arg then the library @file{tmm.el} is used for
-displaying the popup-menu - ignored with XEmacs.
+displaying the popup-menu.
 
 @item @kbd{<up>}
 @itemx @kbd{<down>}

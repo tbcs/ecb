@@ -37,20 +37,8 @@
 
 ;;; Code
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-util)
 (require 'ecb-face)
-
-;; XEmacs
-(silentcomp-defun ecb-redraw-modeline)
-(silentcomp-defun make-extent)
-(silentcomp-defun set-extent-face)
-(silentcomp-defun set-extent-property)
-;; Emacs
-(silentcomp-defun force-mode-line-update)
-(silentcomp-defun propertize)
 
 (defgroup ecb-mode-line nil
   "Settings for the modelines of the ECB-tree-buffers."
@@ -121,10 +109,7 @@ This can be used to jump to windows by number with commands like:
     \"Switch to the nth window\"
     \(interactive \"P\")
     \(if \(integerp number)
-        \(select-window \(nth number \(window-list)))))
-
-Currently this feature is only available for GNU Emacs 21.X, because neither
-GNU Emacs < 21 nor XEmacs can evaluate dynamically forms in the mode-line."
+        \(select-window \(nth number \(window-list)))))"
   :group 'ecb-mode-line
   :set (function (lambda (symbol value)
                    (set symbol value)
@@ -268,20 +253,8 @@ prepended by the window-number, see `ecb-mode-line-display-window-number'."
   "Applies FACE to the STR. In additon it applies a help-echo to STR if STR
 contains a text-property 'help-echo."
   (let ((strcp (copy-sequence str)))
-    (if ecb-running-xemacs
-        (let ((ext (make-extent nil nil))
-              (help-echo-str
-               (catch 'found
-                 (dotimes (i (length strcp))
-                   (if (get-text-property i 'help-echo strcp)
-                       (throw 'found
-                              (get-text-property i 'help-echo strcp))))
-                 nil)))
-          (set-extent-face ext face)
-          (set-extent-property ext 'help-echo help-echo-str)
-          (list (cons ext strcp)))
-      (list (propertize strcp 'face face)))))
-                 
+    (list (propertize strcp 'face face))))
+
 (defun ecb-mode-line-set (buffer-name frame prefix &optional text no-win-nr)
   "Sets the mode line for a buffer. The mode line has the scheme:
 \"[WIN-NR ][PREFIX[: ]][TEXT]\". WIN-NR is the number of the window which
@@ -298,14 +271,12 @@ as \"W-<number>\"."
       (setq shown-prefix (ecb-fit-str-to-width shown-prefix (1- win-width) 'right))
       (setq available-text-width (- win-width
                                    (+ (length shown-prefix)
-                                      (if (and (not ecb-running-xemacs)
-                                               ecb-mode-line-display-window-number
+                                      (if (and ecb-mode-line-display-window-number
                                                (not no-win-nr))
                                           4 0))))
       (ecb-mode-line-update-buffer
        buffer-name
-       (list (if (and (not ecb-running-xemacs)
-                      ecb-mode-line-display-window-number
+       (list (if (and ecb-mode-line-display-window-number
                       (not no-win-nr))
                  ;; With :eval we must not use a list
                  '(:eval (car (ecb-mode-line-make-modeline-str
@@ -328,12 +299,10 @@ as \"W-<number>\"."
   (if (ecb-buffer-obj buffer-name)
       (with-current-buffer buffer-name
         (setq mode-line-format new-mode-line-format)
-	(if ecb-running-xemacs
-	    (ecb-redraw-modeline)
-	  (force-mode-line-update)))
+        (force-mode-line-update))
     (message "This buffer isn't available: %s"  buffer-name)))
 
-(silentcomp-provide 'ecb-mode-line)
+(provide 'ecb-mode-line)
 
 ;;; ecb-mode-line.el end here
 

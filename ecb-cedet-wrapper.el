@@ -39,10 +39,6 @@
 ;;
 ;; In addition this file defines all requirements ECB needs of CEDET.
 
-
-(eval-when-compile
-  (require 'silentcomp))
-
 (eval-when-compile
   ;; to avoid compiler grips
   (require 'cl))
@@ -358,6 +354,6 @@ If ECB detects a problem it is reported and then an error is thrown."
   (dolist (f-elem  (append ecb--cedet-function-list ecb--semantic-format-function-list))
     (defalias (intern (concat "ecb--" (symbol-name f-elem))) f-elem)))
 
-(silentcomp-provide 'ecb-cedet-wrapper)
+(provide 'ecb-cedet-wrapper)
 
 ;;; ecb-cedet-wrapper.el end here

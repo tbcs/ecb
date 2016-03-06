@@ -73,18 +73,9 @@
 
 ;;; Code:
 
-(eval-when-compile
-  (require 'silentcomp))
-
 (require 'ecb-util)
 (require 'ecb-compilation)
 (require 'ecb-common-browser)
-
-(silentcomp-defvar eshell-buffer-name)
-(silentcomp-defun eshell)
-(silentcomp-defun eshell/cd)
-(silentcomp-defun eshell-send-input)
-(silentcomp-defun eshell-bol)
 
 (defgroup ecb-eshell nil
   "Settings for eshell integration within the ECB."
@@ -361,12 +352,9 @@ enlarge the compile-window over half of the frame-height and also not below
                           ;; we want to see the old command line too and 2
                           ;; must be added because we have a modeline and one
                           ;; empty line cause of the (recenter -2) in
-                          ;; `ecb-eshell-recenter'. For XEmacs it would be
-                          ;; better to check if a horiz. scrollbar is used.
-                          ;; This causes the one line more we need for XEmacs
-                          (+ (if ecb-running-xemacs 4 3)
-                             (count-lines ecb-eshell-pre-command-point
-                                          (point))))
+                          ;; `ecb-eshell-recenter'.
+                          (+ 3 (count-lines ecb-eshell-pre-command-point
+                                            (point))))
                         (/ (1- (frame-height)) 2))
                    compile-window-height-lines)))
         (ecb-toggle-compile-window-height 1)
@@ -389,6 +377,6 @@ enlarge the compile-window over half of the frame-height and also not below
 
 (add-hook 'ecb-activate-hook 'ecb-eshell-auto-activate-hook)
 
-(silentcomp-provide 'ecb-eshell)
+(provide 'ecb-eshell)
 
 ;;; ecb-eshell.el ends here
